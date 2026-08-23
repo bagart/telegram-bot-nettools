@@ -1,0 +1,44 @@
+{
+    "$schema": "https://getcomposer.org/schema.json",
+    "name": "bagart/telegram-bot-nettools",
+    "description": "Nettools module for the Telegram bot platform: auditor/admin toolkit (whois/RDAP, DNS, geo/ASN, ping/trace, TLS/mail/security audits, aggregated reports, recommendations)",
+    "type": "library",
+    "license": "MIT",
+    "keywords": [
+        "telegram",
+        "tg-bot",
+        "telegram-bot",
+        "bot-platform",
+        "nettools",
+        "whois",
+        "dns",
+        "audit",
+        "module"
+    ],
+    "authors": [
+        {
+            "name": "BAGArt (Artur Baltaev)",
+            "email": "baltaev.artur+ask@gmail.com"
+        }
+    ],
+    "require": {
+        "php": "^8.5",
+        "bagart/telegram-bot-lib": "*",
+        "laravel/framework": "^13.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "BAGArt\\TelegramBotNettools\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "BAGArt\\TelegramBotNettools\\Tests\\": "tests/"
+        }
+    },
+    "scripts": {
+        "test": [
+            "@php ../../../vendor/bin/phpunit --testsuite NettoolsModule"
+        ]
+    }
+}
