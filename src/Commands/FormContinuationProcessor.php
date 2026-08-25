@@ -14,7 +14,8 @@ use BAGArt\TelegramBot\Processing\BotProcessorContext;
 use BAGArt\TelegramBot\Processing\ErrorHandling\ProcessorErrorContext;
 use BAGArt\TelegramBot\TgApi\Types\DTO\MessageTypeDTO;
 use BAGArt\TelegramBotNettools\Commands\Concerns\SendsCards;
-use BAGArt\TelegramBotNettools\Formatting\Messages;
+use BAGArt\TelegramBotNettools\Formatters\Messages;
+use BAGArt\TelegramBotNettools\NettoolsModule;
 use BAGArt\TelegramBotNettools\Ui\Keyboards\MainMenuKb;
 
 /**

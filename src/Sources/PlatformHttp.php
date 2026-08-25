@@ -82,16 +82,19 @@ final class PlatformHttp implements SourceHttpContract
     }
 
     /**
-     * @return array<string, mixed>|null
+     * Accepts both top-level JSON objects and lists: crt.sh `output=json`
+     * and certspotter issuances answer with bare arrays.
+     *
+     * @return array<string, mixed>|list<mixed>|null
      */
     private function decodeBody(string $body): ?array
     {
-        if ($body === '' || $body[0] !== '{') {
+        if ($body === '' || ! in_array($body[0], ['{', '['], true)) {
             return null;
         }
 
         try {
-            /** @var array<string, mixed>|false|null $decoded */
+            /** @var array<string, mixed>|list<mixed>|false|null $decoded */
             $decoded = json_decode($body, true, 64, JSON_THROW_ON_ERROR);
         } catch (\JsonException) {
             return null;

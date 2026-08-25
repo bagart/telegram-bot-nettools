@@ -31,6 +31,9 @@ final class ReportCommand extends ProbeCommand
 
     public const int WEIGHT = 8;
 
+    /** Worst-case wall for the whole section sweep (semaphore TTL basis). */
+    public const int HEAVY_CAP_SECONDS = 60;
+
     protected function featureEnabled(NettoolsSettings $settings): bool
     {
         return $settings->auditEnabled;
@@ -84,6 +87,16 @@ final class ReportCommand extends ProbeCommand
                 return;
             }
 
+            // Heavy slot first: a busy rejection must never consume quota
+            try {
+                $this->services->semaphore->acquire(self::HEAVY_CAP_SECONDS);
+            } catch (\BAGArt\TelegramBotNettools\Contracts\Exceptions\SemaphoreBusyException $exception) {
+                $this->services->metrics($this->context->logger)->recordEvent('semaphore_busy');
+
+                throw $exception;
+            }
+            $this->services->metrics($this->context->logger)->recordEvent('heavy_acquired');
+
             $startedAt = microtime(true);
             $this->services->quota->charge($chatId, $userId, self::WEIGHT);
 
@@ -126,6 +139,8 @@ final class ReportCommand extends ProbeCommand
             $this->services->lastAction()->record($chatId, self::NAME, $input);
         } catch (Throwable $exception) {
             $card = ErrorCard::fromException($exception, (int) $chatId);
+        } finally {
+            $this->services->semaphore->release();
         }
 
         $this->sendCard($botConfig, $chatId, $card);

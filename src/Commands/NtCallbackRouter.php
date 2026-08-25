@@ -35,6 +35,9 @@ final class NtCallbackRouter implements TgModuleProcessorContract
 {
     use BuildsScreens;
 
+    /** World ping wall budget: create ≤5s + 5 polls ×(1s sleep + ≤5s fetch). */
+    private const int WORLD_PING_CAP_SECONDS = 35;
+
     public function __construct(
         private readonly TgSenderContract $sender,
         private readonly NettoolsServices $services,
@@ -326,19 +329,34 @@ final class NtCallbackRouter implements TgModuleProcessorContract
             return false;
         }
 
-        if (! $this->services->rateLimiter()->hit('worldping', $chatId, $dto->from?->id, 1, 60)) {
-            $this->answer($botConfig, $dto, 'World ping: max 1 per minute — try later.');
+        // Heavy slot before the rate slot: a busy rejection must not consume
+        // the caller's once-per-minute budget.
+        try {
+            $this->services->semaphore->acquire(self::WORLD_PING_CAP_SECONDS);
+            $this->services->metrics()->recordEvent('heavy_acquired');
+        } catch (\BAGArt\TelegramBotNettools\Contracts\Exceptions\SemaphoreBusyException $exception) {
+            $this->services->metrics()->recordEvent('semaphore_busy');
+            $this->answer($botConfig, $dto, $exception->userMessage());
             return true;
         }
 
-        $world = new \BAGArt\TelegramBotNettools\Support\WorldPing($this->services->fetcher);
-        $outcome = $world->ping($entry['host']);
+        try {
+            if (! $this->services->rateLimiter()->hit('worldping', $chatId, $dto->from?->id, 1, 60)) {
+                $this->answer($botConfig, $dto, 'World ping: max 1 per minute — try later.');
+                return true;
+            }
 
-        $this->answer($botConfig, $dto);
-        $this->sendCard($botConfig, $chatId, [
-            'text' => \BAGArt\TelegramBotNettools\Ui\WorldPingCard::render($outcome, $entry['host']),
-            'keyboard' => [[new \BAGArt\TelegramBotNettools\Ui\Button('« Menu', \BAGArt\TelegramBotNettools\Ui\CallbackGrammar::encode('menu', $route['chatId']))]],
-        ]);
+            $world = new \BAGArt\TelegramBotNettools\Support\WorldPing($this->services->fetcher);
+            $outcome = $world->ping($entry['host']);
+
+            $this->answer($botConfig, $dto);
+            $this->sendCard($botConfig, $chatId, [
+                'text' => \BAGArt\TelegramBotNettools\Ui\WorldPingCard::render($outcome, $entry['host']),
+                'keyboard' => [[new \BAGArt\TelegramBotNettools\Ui\Button('« Menu', \BAGArt\TelegramBotNettools\Ui\CallbackGrammar::encode('menu', $route['chatId']))]],
+            ]);
+        } finally {
+            $this->services->semaphore->release();
+        }
 
         return true;
     }

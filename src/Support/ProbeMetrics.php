@@ -47,6 +47,13 @@ final class ProbeMetrics
         return (int) $this->cache->get($this->key($probe, $bucket));
     }
 
+    /** Point event (e.g. heavy-slot acquired, semaphore busy) → daily counter + log line. */
+    public function recordEvent(string $event): void
+    {
+        $this->cache->incrementWithTtl($this->key($event, 'events'), 1, self::TTL_SECONDS);
+        $this->logger?->info('nettools.event', ['event' => $event]);
+    }
+
     private function key(string $probe, string $bucket): string
     {
         return self::KEY_PREFIX.date('Ymd').":{$probe}:{$bucket}";

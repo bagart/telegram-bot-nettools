@@ -19,7 +19,9 @@ interface SourceHttpContract
      *
      * @param  int  $timeoutSeconds  hard wall-clock cap for the whole call,
      *                               including ≤2 redirect hops
-     * @return array<string, mixed>|null decoded JSON object; null = timeout,
+     * @return array<string, mixed>|list<mixed>|null decoded JSON object or
+     *                                   top-level list (CT sources answer
+     *                                   with bare arrays); null = timeout,
      *                                   transport error or non-2xx
      */
     public function getJson(string $url, int $timeoutSeconds): ?array;

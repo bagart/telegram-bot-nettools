@@ -11,8 +11,10 @@ use BAGArt\TelegramBotNettools\Results\ProbeOptions;
 use BAGArt\TelegramBotNettools\Results\ProbeResult;
 use BAGArt\TelegramBotNettools\Sources\CtLogSource;
 use BAGArt\TelegramBotNettools\Sources\DnsClient;
+use BAGArt\TelegramBotNettools\Sources\PlatformHttp;
 use BAGArt\TelegramBotNettools\Tests\Support\FakeDnsTransport;
 use BAGArt\TelegramBotNettools\Tests\Support\FakeHttpSource;
+use BAGArt\TelegramBotNettools\Tests\Support\RawBodyApiClient;
 use BAGArt\TelegramBotNettools\Ui\SubsCard;
 use PHPUnit\Framework\TestCase;
 
@@ -172,6 +174,46 @@ final class SubsProbeTest extends TestCase
         $names = array_column($result->payload['resolved'], 'name');
         self::assertSame(['alt.example.com', 'example.com'], $names);
         self::assertSame(2, $result->payload['counts']['ct']);
+    }
+
+    /**
+     * P0-2 regression: both CT sources answer with top-level JSON ARRAYS on
+     * the wire; the production PlatformHttp adapter must decode them (the
+     * object-only guard degraded /subs permanently while the pre-decoded
+     * FakeHttpSource masked it).
+     */
+    public function test_crtsh_array_body_is_decoded_through_production_platform_http(): void
+    {
+        $client = new RawBodyApiClient([
+            self::CRTSH_URL => '[{"name_value": "www.example.com\n*.mail.example.com"}]',
+        ]);
+
+        $names = (new CtLogSource(new PlatformHttp($client)))->fetchCrtsh('example.com', 5);
+
+        self::assertSame(['mail.example.com', 'www.example.com'], $names);
+    }
+
+    public function test_certspotter_array_body_is_decoded_through_production_platform_http(): void
+    {
+        $client = new RawBodyApiClient([
+            self::CERTSPOTTER_URL => '[{"dns_names": ["ALT.example.com"]}, {"dns_names": ["example.com"]}]',
+        ]);
+
+        $names = (new CtLogSource(new PlatformHttp($client)))->fetchCertspotter('example.com', 5);
+
+        self::assertSame(['alt.example.com', 'example.com'], $names);
+    }
+
+    public function test_platform_http_still_decodes_object_bodies_and_rejects_non_json(): void
+    {
+        $client = new RawBodyApiClient([
+            'https://rdap.org/domain/example.org' => '{"ldhName": "EXAMPLE.ORG"}',
+            'https://dead.example/x' => '<html>not json</html>',
+        ]);
+        $http = new PlatformHttp($client);
+
+        self::assertSame(['ldhName' => 'EXAMPLE.ORG'], $http->getJson('https://rdap.org/domain/example.org', 5));
+        self::assertNull($http->getJson('https://dead.example/x', 5));
     }
 
     public function test_takeover_fingerprint_marks_row_suspect(): void

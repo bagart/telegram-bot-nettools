@@ -47,18 +47,15 @@ return [
         'whois43' => 8,
         'dns' => 2,
         'http' => 5,
-        'tls' => 3,
+        'ping' => 4,
     ],
 
     'caps' => [
         'ping_packets' => 4,
         'trace_hops' => 15,
-        'subs_show' => 200,
-        'scan_ports' => 100,
+        // /port throttle (per user, per hour) consumed by Support\RateLimiter
+        'port_rate_per_hour' => 20,
     ],
-
-    // Custom wordlist path; null = bundled list (Phase 2)
-    'wordlist_path' => null,
 
     // GeoLite2 mmdb paths; null = HTTP fallback sources
     'mmdb' => [
@@ -66,25 +63,25 @@ return [
         'asn' => env('NETTOOLS_MMDB_ASN'),
     ],
 
-    'api_keys' => [
-        'ipinfo' => env('NETTOOLS_IPINFO_KEY'),
-        'censys' => env('NETTOOLS_CENSYS_KEY'),
-    ],
-
-    'rate_limits' => [
-        'crtsh_rps' => (float) env('NETTOOLS_CRTSH_RPS', 0.5),
-        'rdap_rps' => (float) env('NETTOOLS_RDAP_RPS', 1.0),
-        'whois43_rps' => (float) env('NETTOOLS_WHOIS43_RPS', 0.5),
-    ],
-
-    // Admin chats may allowlist private/reserved targets (SSRF matrix bypass)
-    'allow_private_targets_for_admins' => false,
+    // NOTE: keys without consumers are deliberately NOT declared here
+    // (removed 2026-08-25, audit P0-3 / P1-3):
+    // - api_keys.{ipinfo,censys} — no client consumes them yet;
+    //   reintroduce together with the consuming source client.
+    // - rate_limits.{crtsh_rps,rdap_rps,whois43_rps} — no source-level
+    //   throttler is wired yet; land the limiter with its first real
+    //   consumer (planned RIPEstat BGP deep-dive), not before.
+    // - timeouts.tls — TLS probes carry their own budgets; add back next to
+    //   a reader if per-source tuning is ever needed.
+    // - allow_private_targets_for_admins — declared SSRF bypass was never
+    //   implemented (fail-closed stays); revisit only with an explicit,
+    //   logged per-command design.
+    // - caps.{subs_show,scan_ports}, wordlist_path, ui.{tools_per_row,
+    //   detail_mode_default} — hardcoded in probes/UI today; add back only
+    //   next to the code that reads them.
 
     'ui' => [
-        'tools_per_row' => 3,
         // Heavy ops (/trace, /report, /portscan) ask for confirmation first
         'heavy_confirm' => true,
-        'detail_mode_default' => 'compact',
     ],
 
     'memory' => [

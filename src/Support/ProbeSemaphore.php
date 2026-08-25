@@ -8,9 +8,11 @@ use BAGArt\AsyncKernel\Contracts\ASKLockerContract;
 use BAGArt\TelegramBotNettools\Contracts\Exceptions\SemaphoreBusyException;
 
 /**
- * Global heavy-probe semaphore (RFC D1): one blocking probe at a time per
- * worker instance. TTL = cap + grace, so a crashed holder cannot deadlock it;
- * contended callers get an instant "busy, retry in ~Ns" — never queued.
+ * Global heavy-probe semaphore (RFC D1): one heavy probe at a time across
+ * the whole deployment — fixed cache key `tg-nettools:heavy`, so every
+ * worker instance contends on the same slot. TTL = cap + grace, so a crashed
+ * holder cannot deadlock it; contended callers get an instant "busy, retry
+ * in ~Ns" — never queued.
  */
 final class ProbeSemaphore
 {

@@ -133,6 +133,7 @@ abstract class ProbeCommand implements TgModuleProcessorContract
         $degraded = [];
         $latencyMs = 0;
         $probeName = static::NAME;
+        $heavyCap = $this->heavyCapSeconds();
 
         try {
             if (! $this->featureEnabled($this->effSettings)) {
@@ -148,6 +149,9 @@ abstract class ProbeCommand implements TgModuleProcessorContract
 
                 return;
             }
+
+            // Heavy slot first: a busy rejection must never consume quota
+            $this->acquireHeavySlot($heavyCap);
 
             $this->services->quota->charge($chatId, $userId, static::WEIGHT);
 
@@ -174,6 +178,10 @@ abstract class ProbeCommand implements TgModuleProcessorContract
                 throw $exception;
             }
             $card = ErrorCard::fromException($exception, (int) $chatId);
+        } finally {
+            if ($heavyCap !== null) {
+                $this->services->semaphore->release();
+            }
         }
 
         $this->services->metrics($this->context->logger)->record(
@@ -254,6 +262,36 @@ abstract class ProbeCommand implements TgModuleProcessorContract
     protected function beforeRun(NetTarget $target, bool $confirmed, string $chatId): ?array
     {
         return null;
+    }
+
+    /**
+     * Worst-case wall seconds for heavy commands (/trace, /portscan) — the
+     * global semaphore TTL basis; null = light command, no slot needed.
+     */
+    protected function heavyCapSeconds(): ?int
+    {
+        return null;
+    }
+
+    /**
+     * Serialize heavy probes through the global semaphore (§D1). Busy →
+     * counted + rethrown as SemaphoreBusyException (friendly card, no charge).
+     */
+    private function acquireHeavySlot(?int $capSeconds): void
+    {
+        if ($capSeconds === null) {
+            return;
+        }
+
+        try {
+            $this->services->semaphore->acquire($capSeconds);
+        } catch (\BAGArt\TelegramBotNettools\Contracts\Exceptions\SemaphoreBusyException $exception) {
+            $this->services->metrics($this->context->logger)->recordEvent('semaphore_busy');
+
+            throw $exception;
+        }
+
+        $this->services->metrics($this->context->logger)->recordEvent('heavy_acquired');
     }
 
     /**

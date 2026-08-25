@@ -43,6 +43,11 @@ final class PortscanCommand extends ProbeCommand
         ];
     }
 
+    protected function heavyCapSeconds(): ?int
+    {
+        return PortScanProbe::WALL_CAP_SECONDS;
+    }
+
     protected function renderCard(ProbeResult $result, int $chatId, string $hostLabel): array
     {
         return PortScanCard::render($result, $chatId, time(), $hostLabel);

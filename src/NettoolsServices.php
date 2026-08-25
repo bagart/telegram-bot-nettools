@@ -102,7 +102,7 @@ final readonly class NettoolsServices
             quota: QuotaLedger::fromConfig($cache),
             semaphore: new ProbeSemaphore($setup->locker),
             probeCache: new ProbeCache($cache, $setup->locker),
-            capabilities: new CapabilityDetector($setup->cache),
+            capabilities: new CapabilityDetector($cache),
             targets: new TargetPipeline(),
             settings: NettoolsSettings::fromConfig(),
             fetcher: new PlatformFetcher($setup->apiClient),
@@ -122,7 +122,7 @@ final readonly class NettoolsServices
         return new Probes\WhoisProbe(
             $this->http,
             $this->cache,
-            new Sources\Port43WhoisClient($this->port43),
+            $this->port43,
             $this->breaker,
         );
     }

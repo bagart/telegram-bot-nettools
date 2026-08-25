@@ -53,9 +53,11 @@ MCP tool: `NettoolsProbeTool` for AI agents (same guard/quota path).
   failures for 10 min (`tg-nettools:brk:*` cache keys); `/nt doctor` renders
   live states. ip-api free tier is HTTP-only and capped at 45 req/min.
 - **Blocking model**: process probes are argv-safe `proc_open` under hard
-  caps (ping ≤4s, trace ≤15s, portscan ≤10s wall); the global semaphore key
-  is `tg-nettools:heavy:{workerId}`. Revisit triggers: >5 heavy probes/min
-  sustained or >1 worker per bot.
+  caps (ping ≤4s, trace ≤15s, portscan ≤10s wall); heavy commands
+  (/trace, /report, /portscan, world ping) hold the global semaphore key
+  `tg-nettools:heavy` (one heavy probe per deployment; busy callers get a
+  retry-in-~Ns card and are not quota-charged). Revisit triggers: >5 heavy
+  probes/min sustained or >1 worker per bot.
 - **Benchmark**: `php misc/BAGArt/telegram-bot-nettools/tools/bench.php`
   prints per-probe latency over fixture targets (no egress).
 

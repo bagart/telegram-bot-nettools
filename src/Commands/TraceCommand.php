@@ -37,6 +37,11 @@ final class TraceCommand extends ProbeCommand
         ];
     }
 
+    protected function heavyCapSeconds(): ?int
+    {
+        return 15;
+    }
+
     protected function beforeRun(NetTarget $target, bool $confirmed, string $chatId): ?array
     {
         if ($confirmed || ! $this->effSettings->heavyConfirm) {
