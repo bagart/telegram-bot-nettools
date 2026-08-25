@@ -1,0 +1,60 @@
+{
+    "_readme": [
+        "This file locks the dependencies of your project to a known state",
+        "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
+        "This file is @generated automatically"
+    ],
+    "content-hash": "d1ce9acba0351eadbaf592fed006e854",
+    "packages": [],
+    "packages-dev": [
+        {
+            "name": "bagart/devops-baseline",
+            "version": "dev-main",
+            "dist": {
+                "type": "path",
+                "url": "../devops-baseline",
+                "reference": "b9b6f054d845dab446185693d1412dd26fd48714"
+            },
+            "require": {
+                "php": "^8.4"
+            },
+            "bin": [
+                "bin/baseline-check",
+                "bin/baseline-fix",
+                "bin/baseline-security",
+                "bin/baseline-drift",
+                "bin/baseline-setup",
+                "bin/baseline-selftest"
+            ],
+            "type": "library",
+            "scripts": {
+                "test": [
+                    "bash selftest/selfcheck-engine.sh"
+                ],
+                "lint": [
+                    "bash controls/shell-lint.sh lib bin hooks selftest",
+                    "php controls/lf-check.php --all"
+                ]
+            },
+            "license": [
+                "MIT"
+            ],
+            "description": "Reusable DevOps/security baseline engine: controls, hooks and CLI for BAGArt repositories. Ships executors and defaults; every consumer keeps its own policy JSONs.",
+            "transport-options": {
+                "relative": true
+            }
+        }
+    ],
+    "aliases": [],
+    "minimum-stability": "stable",
+    "stability-flags": {
+        "bagart/devops-baseline": 20
+    },
+    "prefer-stable": false,
+    "prefer-lowest": false,
+    "platform": {
+        "php": "^8.5"
+    },
+    "platform-dev": [],
+    "plugin-api-version": "2.6.0"
+}

@@ -42,5 +42,14 @@
         "test": [
             "@php ../../../vendor/bin/phpunit --testsuite NettoolsModule"
         ]
+    },
+    "repositories": {
+        "baseline": {
+            "type": "path",
+            "url": "../devops-baseline"
+        }
+    },
+    "require-dev": {
+        "bagart/devops-baseline": "@dev"
     }
 }
