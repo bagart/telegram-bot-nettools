@@ -126,6 +126,7 @@ final class NettoolsProbeTool extends Tool
                     new DnsClient($this->services->dnsTransport),
                     $this->services->resolvers(),
                     $settings->timeoutDns,
+                    fetcher: $this->services->fetcher,
                 ),
                 new ProbeOptions(flags: [SubsProbe::FLAG_BRUTE => false], timeoutSeconds: $timeoutSeconds),
             ],

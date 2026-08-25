@@ -15,6 +15,9 @@ use BAGArt\TelegramBotNettools\Support\CapabilityDetector;
  * /trace probe (RFC §7.5): traceroute (or tracepath) binary, resolved-IP
  * argv-safe; hops with RTTs, per-hop ASN via mmdb, destination-reached marker.
  * Firewalled hops stay honest `* * *` rows. Measurements are never cached.
+ *
+ * With an `onHop` hook the live proc path streams each parsed hop out as it
+ * arrives (progressive preview); without it the run stays a bulk read.
  */
 final class TraceProbe implements NettoolsProbeContract
 {
@@ -23,13 +26,33 @@ final class TraceProbe implements NettoolsProbeContract
     /** @var (Closure(list<string> $argv): array{exit: int, out: string})|null */
     private readonly ?\Closure $runProcess;
 
+    /**
+     * Test seam mirroring the live proc path: receives an emit(string $line)
+     * callback that must be invoked once per raw stdout line, in order.
+     *
+     * @var (Closure(list<string> $argv, callable $emit): array{exit: int, out: string})|null
+     */
+    private readonly ?\Closure $runStreaming;
+
+    /**
+     * Progressive-preview hook: invoked once per parsed hop as it arrives,
+     * with array{n, ip, ms, timeout} (ASN is enriched only on the final card).
+     *
+     * @var (Closure(array{n: int, ip: ?string, ms: list<float>, timeout: bool}): void)|null
+     */
+    private readonly ?\Closure $onHop;
+
     public function __construct(
         private readonly CapabilityDetector $capabilities,
         private readonly ?MmdbContract $mmdb = null,
         ?\Closure $runProcess = null,
         private readonly int $maxHops = 15,
+        ?\Closure $onHop = null,
+        ?\Closure $runStreaming = null,
     ) {
         $this->runProcess = $runProcess;
+        $this->onHop = $onHop;
+        $this->runStreaming = $runStreaming;
     }
 
     public function name(): string
@@ -91,40 +114,56 @@ final class TraceProbe implements NettoolsProbeContract
         $hops = [];
 
         foreach (explode("\n", $out) as $line) {
-            if (preg_match('/^\s*(\d{1,3})[.:)]?\s+(.*)$/', $line, $m) !== 1) {
-                continue; // headers ("traceroute to ...") don't start with a hop number
-            }
-
-            $n = (int) $m[1];
-            if ($n < 1 || $n > $maxHops || isset($hops[$n - 1])) {
+            if (($hop = self::hopFromLine($line, $maxHops)) === null || isset($hops[$hop['n'] - 1])) {
                 continue;
             }
-
-            $body = $m[2];
-
-            // First globally-routable-looking address on the line wins
-            $ip = null;
-            if (preg_match('/(?:^|[\s(\[])((?:\d{1,3}\.){3}\d{1,3})(?:[\s)\].]|$)/', $body, $ipMatch) === 1) {
-                $ip = $ipMatch[1];
-            } elseif (preg_match('/((?:[0-9a-f]{1,4}:){2,7}[0-9a-f]{1,4})/i', $body, $ipMatch6) === 1) {
-                $ip = strtolower($ipMatch6[1]);
-            }
-
-            $ms = [];
-            if (preg_match_all('/([\d.]+)\s*ms/', $body, $rtts) === 1 && $rtts[1] !== []) {
-                $ms = array_map(floatval(...), $rtts[1]);
-            }
-
-            $hops[] = [
-                'n' => $n,
-                'ip' => $ip,
-                'asn' => null,
-                'ms' => $ms,
-                'timeout' => $ms === [],
-            ];
+            $hops[$hop['n'] - 1] = $hop;
         }
 
-        return $hops;
+        ksort($hops);
+
+        return array_values($hops);
+    }
+
+    /**
+     * One traceroute/tracepath output line → hop row; headers ("traceroute
+     * to ...") and out-of-range hop numbers yield null.
+     *
+     * @return array{n: int, ip: ?string, asn: null, ms: list<float>, timeout: bool}|null
+     */
+    private static function hopFromLine(string $line, int $maxHops): ?array
+    {
+        if (preg_match('/^\s*(\d{1,3})[.:)]?\s+(.*)$/', $line, $m) !== 1) {
+            return null;
+        }
+
+        $n = (int) $m[1];
+        if ($n < 1 || $n > $maxHops) {
+            return null;
+        }
+
+        $body = $m[2];
+
+        // First globally-routable-looking address on the line wins
+        $ip = null;
+        if (preg_match('/(?:^|[\s(\[])((?:\d{1,3}\.){3}\d{1,3})(?:[\s)\].]|$)/', $body, $ipMatch) === 1) {
+            $ip = $ipMatch[1];
+        } elseif (preg_match('/((?:[0-9a-f]{1,4}:){2,7}[0-9a-f]{1,4})/i', $body, $ipMatch6) === 1) {
+            $ip = strtolower($ipMatch6[1]);
+        }
+
+        $ms = [];
+        if (preg_match_all('/([\d.]+)\s*ms/', $body, $rtts) === 1 && $rtts[1] !== []) {
+            $ms = array_map(floatval(...), $rtts[1]);
+        }
+
+        return [
+            'n' => $n,
+            'ip' => $ip,
+            'asn' => null,
+            'ms' => $ms,
+            'timeout' => $ms === [],
+        ];
     }
 
     /**
@@ -161,13 +200,58 @@ final class TraceProbe implements NettoolsProbeContract
     }
 
     /**
+     * Live stdout pump: parses each raw line into a hop and forwards fresh
+     * ones to the preview hook. Returns null when no hook is attached.
+     *
+     * @return \Closure(string): void|null
+     */
+    private function emitter(): ?\Closure
+    {
+        if ($this->onHop === null) {
+            return null;
+        }
+
+        $seen = [];
+
+        return function (string $line) use (&$seen): void {
+            if (($hop = self::hopFromLine(rtrim($line, "\r\n"), $this->maxHops)) === null || isset($seen[$hop['n']])) {
+                return;
+            }
+            $seen[$hop['n']] = true;
+            ($this->onHop)(['n' => $hop['n'], 'ip' => $hop['ip'], 'ms' => $hop['ms'], 'timeout' => $hop['timeout']]);
+        };
+    }
+
+    /** Replay a bulk buffer through the same emitter (fake-runner path). */
+    private function replayHops(string $out): void
+    {
+        $emit = $this->emitter();
+        if ($emit === null) {
+            return;
+        }
+        foreach (explode("\n", $out) as $line) {
+            $emit($line);
+        }
+    }
+
+    /**
      * @param  list<string>  $argv  first element is the program name
      * @return array{exit: int, out: string}
      */
     private function execute(array $argv): array
     {
         if ($this->runProcess !== null) {
-            return ($this->runProcess)($argv);
+            $outcome = ($this->runProcess)($argv);
+            $this->replayHops((string) $outcome['out']);
+
+            return $outcome;
+        }
+
+        if ($this->runStreaming !== null) {
+            $emit = $this->emitter() ?? static function (string $line): void {
+            };
+
+            return ($this->runStreaming)($argv, $emit);
         }
 
         $command = implode(' ', array_map(escapeshellarg(...), $argv));
@@ -180,7 +264,17 @@ final class TraceProbe implements NettoolsProbeContract
 
         try {
             stream_set_timeout($pipes[1], self::DEADLINE_SECONDS + 5);
-            $stdout = (string) stream_get_contents($pipes[1]);
+
+            if (($emit = $this->emitter()) === null) {
+                $stdout = (string) stream_get_contents($pipes[1]);
+            } else {
+                // Line-by-line read so previews go out while hops arrive
+                $stdout = '';
+                while (($line = fgets($pipes[1])) !== false) {
+                    $stdout .= $line;
+                    $emit($line);
+                }
+            }
             $stderr = (string) stream_get_contents($pipes[2]);
         } finally {
             foreach ($pipes as $pipe) {

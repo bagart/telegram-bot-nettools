@@ -86,7 +86,7 @@ final class RipestatSource
         $neighbours = [];
         foreach ((array) ($body['neighbours'] ?? []) as $entry) {
             $peerAsn = filter_var($entry['asn'] ?? null, FILTER_VALIDATE_INT);
-            if ($peerAsn === false || $peerAsn === null) {
+            if ($peerAsn === false || $peerAsn === 0) {
                 continue;
             }
             $neighbours[] = [

@@ -69,4 +69,20 @@ final class TraceCard
     {
         return is_string($value) && trim($value) !== '' ? trim($value) : null;
     }
+
+    /**
+     * Progressive preview body streamed via sendMessageDraft while hops
+     * arrive (§7.5). The final card always follows as a real message.
+     *
+     * @param  list<string>  $lines  pre-formatted hop rows
+     */
+    public static function draftText(string $targetHost, array $lines): string
+    {
+        $head = '<b>TRACEROUTE '.HtmlRenderer::esc($targetHost)."</b>\n";
+        if ($lines === []) {
+            return $head.'<i>starting…</i>';
+        }
+
+        return $head.implode("\n", array_map(HtmlRenderer::esc(...), $lines))."\n…";
+    }
 }

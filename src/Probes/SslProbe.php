@@ -32,8 +32,11 @@ final class SslProbe implements NettoolsProbeContract
     private const array WEAK_SIGNATURE_FRAGMENTS = ['sha1', 'md5'];
 
     /**
-     * @param  \Closure(string, int, float): ?Inspection  $tlsInspect  returns
-     *                    the normalized inspection or null when no TLS
+     * @param  \Closure(string, int, float, ?string=): ?Inspection  $tlsInspect
+     *                    ($host, $port, $timeoutSeconds, $pinIp) returns the
+     *                    normalized inspection or null when no TLS; $pinIp is
+     *                    the pipeline-resolved address to connect to instead
+     *                    of re-resolving $host (todo P1-2)
      */
     public function __construct(private readonly \Closure $tlsInspect)
     {
@@ -57,6 +60,7 @@ final class SslProbe implements NettoolsProbeContract
             $target->host,
             self::DEFAULT_PORT,
             (float) max(1, min(10, $options->timeoutSeconds)),
+            HttpProbe::sameFamilyIp($target->ips, str_contains($target->host, ':')),
         );
 
         $payload = self::payload($target->host, is_array($inspection) ? $inspection : null);
@@ -75,20 +79,25 @@ final class SslProbe implements NettoolsProbeContract
     /**
      * Production inspector: one unrestricted handshake (negotiated protocol,
      * ALPN, peer chain) plus restricted handshakes per protocol version to
-     * learn what the endpoint still offers.
+     * learn what the endpoint still offers. Connects to $pinIp when given —
+     * the caller's single resolution — keeping SNI/peer identity at $host.
      */
     public static function selfInspector(): \Closure
     {
-        return static function (string $host, int $port, float $timeoutSeconds): ?array {
-            $primary = self::inspectHandshake($host, $port, $timeoutSeconds, null);
+        return static function (string $host, int $port, float $timeoutSeconds, ?string $pinIp = null): array {
+            $primary = self::inspectHandshake($host, $port, $timeoutSeconds, null, $pinIp);
 
             if (! ($primary['has_tls'] ?? false)) {
                 return $primary;
             }
 
+            // Restricted version probes get a short per-attempt budget —
+            // 4 serial handshakes must not multiply the wall time (todo P2-2).
+            $probeTimeout = max(1.0, min(2.0, $timeoutSeconds));
+
             $offered = [];
             foreach (self::protocolAttempts() as $method => $label) {
-                if ((self::inspectHandshake($host, $port, $timeoutSeconds, $method))['has_tls']) {
+                if ((self::inspectHandshake($host, $port, $probeTimeout, $method, $pinIp))['has_tls']) {
                     $offered[] = $label;
                 }
             }
@@ -98,12 +107,14 @@ final class SslProbe implements NettoolsProbeContract
     }
 
     /**
-     * Single handshake against ssl://{host}:{port}. Verification is disabled
-     * on purpose: bad certificates must be inspected, not rejected.
+     * Single TLS handshake. Verification is disabled on purpose: bad
+     * certificates must be inspected, not rejected. $pinIp (when non-null) is
+     * used as the connect address while SNI/peer_name stay at $host — no
+     * fresh DNS inside the probe.
      *
      * @return array<string, mixed>
      */
-    private static function inspectHandshake(string $host, int $port, float $timeoutSeconds, ?int $cryptoMethod): array
+    private static function inspectHandshake(string $host, int $port, float $timeoutSeconds, ?int $cryptoMethod, ?string $pinIp = null): array
     {
         $context = stream_context_create(['ssl' => array_filter([
             'capture_session_meta' => true,
@@ -116,7 +127,8 @@ final class SslProbe implements NettoolsProbeContract
             'crypto_method' => $cryptoMethod,
         ])]);
 
-        $address = (str_contains($host, ':') ? '['.$host.']' : $host).':'.$port;
+        $connectHost = $pinIp ?? $host;
+        $address = (str_contains($connectHost, ':') ? '['.$connectHost.']' : $connectHost).':'.$port;
         $stream = @stream_socket_client(
             'ssl://'.$address,
             $errno,
@@ -289,6 +301,7 @@ final class SslProbe implements NettoolsProbeContract
             'chain_count' => (int) ($inspection['chain_count'] ?? 0),
             'self_signed' => (bool) ($inspection['self_signed'] ?? false),
             'ocsp_stapled' => (bool) ($inspection['ocsp_stapled'] ?? false),
+            'revocation' => 'unchecked',
             'offered_protocols' => array_values(array_map(strval(...), array_filter(
                 (array) ($inspection['offered_protocols'] ?? []),
                 static fn (mixed $proto): bool => is_scalar($proto),
@@ -296,8 +309,26 @@ final class SslProbe implements NettoolsProbeContract
             'findings' => [],
         ];
 
+        if ($hasTls) {
+            // Honest coverage note (§7.7 revocation group): OCSP/CRL soft-fail
+            // needs responder plumbing this deployment does not ship yet.
+            $payload['findings'][] = [
+                'severity' => 'info',
+                'id' => 'revocation_unchecked',
+                'detail' => 'revocation not checked in this deployment (no OCSP responder query)',
+            ];
+
+            if (! in_array('h2', $payload['alpn'], true)) {
+                $payload['findings'][] = [
+                    'severity' => 'info',
+                    'id' => 'no_h2',
+                    'detail' => 'HTTP/2 not negotiated — enable ALPN h2',
+                ];
+            }
+        }
+
         if ($hasTls && $payload['cert'] !== null) {
-            $payload['findings'] = self::auditFindings($now, $payload);
+            $payload['findings'] = [...$payload['findings'], ...self::auditFindings($now, $payload)];
         }
 
         return $payload;

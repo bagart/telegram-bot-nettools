@@ -11,13 +11,14 @@ use BAGArt\TelegramBotNettools\Results\ProbeResult;
 
 /**
  * /portscan TCP connect scan (RFC §7.11, admin-gated): top-100 ports,
- * 300ms connect timeout, ≤32 concurrent sockets, banner grab on open.
- * Loud disclaimer rendered by the command layer.
+ * 300ms connect timeout, banner grab on open. Connects are STRICTLY
+ * SEQUENTIAL (the blocking model has no concurrent sockets); the wall
+ * budget is checked before every port, so the scan never exceeds
+ * {@see self::WALL_CAP_SECONDS} minus one connect. Loud disclaimer rendered
+ * by the command layer.
  */
 final class PortScanProbe implements NettoolsProbeContract
 {
-    private const int MAX_CONCURRENT = 32;
-
     public const int WALL_CAP_SECONDS = 10;
 
     /** nmap-frequency-derived top ports (first 40 shown; full list in config override). */
@@ -32,9 +33,8 @@ final class PortScanProbe implements NettoolsProbeContract
     public function __construct(
         private readonly int $maxPorts = 100,
         private readonly ?\Closure $connector = null,
-        ?\Closure $runProcess = null,
+        private readonly float $wallCapSeconds = self::WALL_CAP_SECONDS,
     ) {
-        unset($runProcess);
     }
 
     public function name(): string
@@ -57,13 +57,13 @@ final class PortScanProbe implements NettoolsProbeContract
         $connect = $this->connector ?? self::streamConnector();
 
         $results = [];
-        foreach ($ports as $i => $port) {
-            $results[] = ['port' => $port, ...$connect($host, (int) $port)];
-
-            // bounded-blocking politeness: yield every MAX_CONCURRENT batch
-            if (($i + 1) % self::MAX_CONCURRENT === 0 && microtime(true) - $startedAt > self::WALL_CAP_SECONDS - 1) {
+        foreach ($ports as $port) {
+            // deadline honored per-port: worst overshoot is one connect (0.3s)
+            if (microtime(true) - $startedAt > $this->wallCapSeconds - 1) {
                 break;
             }
+
+            $results[] = ['port' => $port, ...$connect($host, (int) $port)];
         }
 
         return new ProbeResult(

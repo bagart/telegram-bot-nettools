@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace BAGArt\TelegramBotNettools\Probes;
 
+use BAGArt\TelegramBotNettools\Contracts\FetcherContract;
 use BAGArt\TelegramBotNettools\Contracts\NettoolsProbeContract;
 use BAGArt\TelegramBotNettools\Results\NetTarget;
 use BAGArt\TelegramBotNettools\Results\ProbeOptions;
@@ -36,6 +37,7 @@ final class MailAuditProbe implements NettoolsProbeContract
         private readonly array $resolvers,
         private readonly int $timeoutSeconds = 2,
         private readonly ?\Closure $smtpCheck = null,
+        private readonly ?FetcherContract $fetcher = null,
     ) {
     }
 
@@ -134,6 +136,16 @@ final class MailAuditProbe implements NettoolsProbeContract
         $mtaSts = ['present' => $stsRecord !== null, 'id' => null, 'policy_fetched' => false];
         if (is_string($stsRecord) && preg_match('/\bid\s*=\s*([^;\s]+)/i', $stsRecord, $m) === 1) {
             $mtaSts['id'] = $m[1];
+
+            [$policyMode, $policyFetched] = $this->fetchMtaStsPolicy($host, $m[1]);
+            $mtaSts['policy_fetched'] = $policyFetched;
+            if ($policyMode !== null) {
+                $mtaSts['mode'] = $policyMode;
+            }
+
+            if ($policyFetched && in_array($policyMode, ['none', 'testing'], true)) {
+                $findings[] = self::finding('warn', 'mta_sts_weak_mode', "MTA-STS policy mode={$policyMode} — move to enforce with a reporting rua");
+            }
         } elseif ($stsRecord === null) {
             $findings[] = self::finding('info', 'mta_sts_absent', 'no MTA-STS record (_mta-sts TXT v=STSv1)');
         }
@@ -329,5 +341,37 @@ final class MailAuditProbe implements NettoolsProbeContract
     private static function finding(string $severity, string $id, string $detail): array
     {
         return ['severity' => $severity, 'id' => $id, 'detail' => $detail];
+    }
+    /**
+     * Fetch + minimally validate the well-known MTA-STS policy (§7.9 modern
+     * stack). Fetcher absent or source down → [null, false] — never a fake
+     * pass.
+     *
+     * @return array{0: ?string, 1: bool}
+     */
+    private function fetchMtaStsPolicy(string $host, string $expectedId): array
+    {
+        if ($this->fetcher === null) {
+            return [null, false];
+        }
+
+        $outcome = $this->fetcher->fetch(
+            'https://mta-sts.'.$host.'/.well-known/mta-sts.txt',
+            'GET',
+            min(max(1, $this->timeoutSeconds), 4),
+        );
+
+        if ($outcome->status !== 200 || ! str_contains(strtolower((string) $outcome->header('Content-Type')), 'text/plain')) {
+            return [null, false];
+        }
+
+        preg_match('/^mode:\s*(\S+)$/mi', $outcome->body, $mode);
+        preg_match('/^id:\s*(\S+)$/mi', $outcome->body, $id);
+
+        if (($id[1] ?? '') !== $expectedId) {
+            return [null, false];
+        }
+
+        return [isset($mode[1]) ? strtolower($mode[1]) : null, true];
     }
 }

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace BAGArt\TelegramBotNettools\Tests\Unit;
 
+use BAGArt\TelegramBotNettools\Contracts\FetcherContract;
 use BAGArt\TelegramBotNettools\Probes\SubsProbe;
 use BAGArt\TelegramBotNettools\Results\GuardVerdict;
 use BAGArt\TelegramBotNettools\Results\NetTarget;
@@ -13,6 +14,7 @@ use BAGArt\TelegramBotNettools\Sources\CtLogSource;
 use BAGArt\TelegramBotNettools\Sources\DnsClient;
 use BAGArt\TelegramBotNettools\Sources\PlatformHttp;
 use BAGArt\TelegramBotNettools\Tests\Support\FakeDnsTransport;
+use BAGArt\TelegramBotNettools\Tests\Support\FakeProbeFetcher;
 use BAGArt\TelegramBotNettools\Tests\Support\FakeHttpSource;
 use BAGArt\TelegramBotNettools\Tests\Support\RawBodyApiClient;
 use BAGArt\TelegramBotNettools\Ui\SubsCard;
@@ -60,6 +62,26 @@ final class SubsProbeTest extends TestCase
             [self::RESOLVER],
             ...$options,
         );
+    }
+
+    private static function probeWithFetcher(FakeHttpSource $http, FakeDnsTransport $transport, FetcherContract $fetcher): SubsProbe
+    {
+        return new SubsProbe(
+            new CtLogSource($http),
+            new DnsClient($transport),
+            [self::RESOLVER],
+            fetcher: $fetcher,
+        );
+    }
+
+    /** DNS script for a single dangling sub → S3 CNAME. */
+    private static function scriptDanglingS3(FakeDnsTransport $transport, string $name = 'dangling.example.com'): void
+    {
+        $transport->script(['udp' => null]);
+        $transport->script(['udp' => null]);
+        $transport->script(['udp' => FakeDnsTransport::response($name, 1, [
+            ['type' => 5, 'ttl' => 300, 'rdata' => FakeDnsTransport::name('old-bucket.s3.amazonaws.com')],
+        ])]);
     }
 
     private static function runProbe(SubsProbe $probe, ?ProbeOptions $options = null): ProbeResult
@@ -303,4 +325,76 @@ final class SubsProbeTest extends TestCase
         self::assertStringContainsString('Showing ', $card['text']);
         self::assertSame([], $card['keyboard']);
     }
+    public function test_fetcher_confirms_takeover_when_provider_not_found_page_served(): void
+    {
+        $http = new FakeHttpSource([
+            self::CRTSH_URL => [['name_value' => 'dangling.example.com']],
+        ]);
+        $transport = new FakeDnsTransport();
+        self::scriptDanglingS3($transport);
+
+        $fetcher = new FakeProbeFetcher([
+            'http://dangling.example.com/' => ['status' => 404, 'body' => '<?xml><Error><Code>NoSuchBucket</Code></Error>'],
+        ]);
+
+        $result = self::runProbe(self::probeWithFetcher($http, $transport, $fetcher));
+
+        self::assertSame(['dangling.example.com'], $result->payload['takeover_confirmed']);
+        self::assertTrue((bool) ($result->payload['resolved'][0]['suspect_confirmed'] ?? false));
+    }
+
+    public function test_fetcher_without_marker_body_leaves_suspicion_unconfirmed(): void
+    {
+        $http = new FakeHttpSource([
+            self::CRTSH_URL => [['name_value' => 'dangling.example.com']],
+        ]);
+        $transport = new FakeDnsTransport();
+        self::scriptDanglingS3($transport);
+
+        // Bucket exists again: a healthy page must NOT confirm
+        $fetcher = new FakeProbeFetcher([
+            'http://dangling.example.com/' => ['status' => 200, 'body' => '<html>Welcome to our archive</html>'],
+        ]);
+
+        $result = self::runProbe(self::probeWithFetcher($http, $transport, $fetcher));
+
+        self::assertSame([], $result->payload['takeover_confirmed']);
+        self::assertArrayNotHasKey('suspect_confirmed', $result->payload['resolved'][0]);
+        self::assertCount(1, $result->payload['suspect_takeover'], 'DNS-only hint stays');
+    }
+
+    public function test_transport_failure_and_5xx_never_confirm_takeover(): void
+    {
+        $http = new FakeHttpSource([
+            self::CRTSH_URL => [['name_value' => 'dangling.example.com']],
+        ]);
+        $transport = new FakeDnsTransport();
+        self::scriptDanglingS3($transport);
+
+        $fetcher = new FakeProbeFetcher([
+            'http://dangling.example.com/' => '@timeout',
+        ]);
+
+        $result = self::runProbe(self::probeWithFetcher($http, $transport, $fetcher));
+
+        self::assertSame([], $result->payload['takeover_confirmed']);
+    }
+
+    public function test_no_fetcher_keeps_dns_only_semantics(): void
+    {
+        $http = new FakeHttpSource([
+            self::CRTSH_URL => [['name_value' => 'dangling.example.com']],
+        ]);
+        $transport = new FakeDnsTransport();
+        self::scriptDanglingS3($transport);
+
+        $result = self::runProbe(self::probe($http, $transport));
+
+        self::assertSame([], $result->payload['takeover_confirmed']);
+        self::assertSame(
+            [['name' => 'dangling.example.com', 'provider' => 's3.amazonaws.com']],
+            $result->payload['suspect_takeover'],
+        );
+    }
+
 }

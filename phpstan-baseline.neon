@@ -1,0 +1,619 @@
+parameters:
+	ignoreErrors:
+		-
+			message: '#^Unknown PHPDoc tag\: @phpstan\-require\-property$#'
+			identifier: phpDoc.phpstanTag
+			count: 1
+			path: src/Commands/Concerns/BuildsScreens.php
+
+		-
+			message: '#^Trait BAGArt\\TelegramBotNettools\\Commands\\Concerns\\RunsProbeCommand is used zero times and is not analysed\.$#'
+			identifier: trait.unused
+			count: 1
+			path: src/Commands/Concerns/RunsProbeCommand.php
+
+		-
+			message: '#^Unknown PHPDoc tag\: @phpstan\-require\-property$#'
+			identifier: phpDoc.phpstanTag
+			count: 1
+			path: src/Commands/Concerns/RunsProbeCommand.php
+
+		-
+			message: '#^Unknown PHPDoc tag\: @phpstan\-require\-property$#'
+			identifier: phpDoc.phpstanTag
+			count: 1
+			path: src/Commands/Concerns/SendsCards.php
+
+		-
+			message: '#^Call to function assert\(\) with true will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 1
+			path: src/Commands/FormContinuationProcessor.php
+
+		-
+			message: '#^Call to function is_string\(\) with null will always evaluate to false\.$#'
+			identifier: function.impossibleType
+			count: 1
+			path: src/Commands/FormContinuationProcessor.php
+
+		-
+			message: '#^Call to static method format\(\) on an unknown class BAGArt\\TelegramBotNettools\\Formatters\\Messages\.$#'
+			identifier: class.notFound
+			count: 1
+			path: src/Commands/FormContinuationProcessor.php
+
+		-
+			message: '#^Instanceof between BAGArt\\TelegramBotNettools\\Commands\\ProbeCommand and BAGArt\\TelegramBotNettools\\Commands\\ProbeCommand will always evaluate to true\.$#'
+			identifier: instanceof.alwaysTrue
+			count: 1
+			path: src/Commands/FormContinuationProcessor.php
+
+		-
+			message: '#^Offset ''command'' on array\{\} on left side of \?\? does not exist\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: src/Commands/FormContinuationProcessor.php
+
+		-
+			message: '#^Offset ''draft'' on array\{action\: string, extra\?\: string\} on left side of \?\? does not exist\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: src/Commands/FormContinuationProcessor.php
+
+		-
+			message: '#^Offset ''flow'' on array\{action\: string, extra\?\: string\} on left side of \?\? does not exist\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: src/Commands/FormContinuationProcessor.php
+
+		-
+			message: '#^Strict comparison using \=\=\= between '''' and ''target'' will always evaluate to false\.$#'
+			identifier: identical.alwaysFalse
+			count: 1
+			path: src/Commands/FormContinuationProcessor.php
+
+		-
+			message: '#^Offset ''ssl'' on array\{notification\: string, options\: array\<mixed\>\} on left side of \?\? does not exist\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: src/Commands/MailCommand.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between null and null will always evaluate to false\.$#'
+			identifier: notIdentical.alwaysFalse
+			count: 1
+			path: src/Commands/MailCommand.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>id" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: src/Commands/MyCommand.php
+
+		-
+			message: '#^Call to function assert\(\) with true will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 3
+			path: src/Commands/NtCallbackRouter.php
+
+		-
+			message: '#^Instanceof between BAGArt\\TelegramBotNettools\\Commands\\MailCommand and BAGArt\\TelegramBotNettools\\Commands\\MailCommand will always evaluate to true\.$#'
+			identifier: instanceof.alwaysTrue
+			count: 1
+			path: src/Commands/NtCallbackRouter.php
+
+		-
+			message: '#^Instanceof between BAGArt\\TelegramBotNettools\\Commands\\ProbeCommand and BAGArt\\TelegramBotNettools\\Commands\\ProbeCommand will always evaluate to true\.$#'
+			identifier: instanceof.alwaysTrue
+			count: 2
+			path: src/Commands/NtCallbackRouter.php
+
+		-
+			message: '#^Offset ''args'' on array\{command\: string, args\: string\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: src/Commands/NtCallbackRouter.php
+
+		-
+			message: '#^Offset ''command'' on array\{command\: string, args\: string\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: src/Commands/NtCallbackRouter.php
+
+		-
+			message: '#^Using nullsafe property access on non\-nullable type BAGArt\\TelegramBot\\TgApi\\Types\\DTO\\UserTypeDTO\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 7
+			path: src/Commands/NtCallbackRouter.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between numeric\-string and '''' will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 1
+			path: src/Commands/PortCommand.php
+
+		-
+			message: '#^Method BAGArt\\TelegramBotNettools\\Commands\\PortscanCommand\:\:heavyCapSeconds\(\) never returns null so it can be removed from the return type\.$#'
+			identifier: return.unusedType
+			count: 1
+			path: src/Commands/PortscanCommand.php
+
+		-
+			message: '#^Call to function is_array\(\) with list\<string\> will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 1
+			path: src/Commands/ProbeCommand.php
+
+		-
+			message: '#^Expression on left side of \?\? is not nullable\.$#'
+			identifier: nullCoalesce.expr
+			count: 1
+			path: src/Commands/ProbeCommand.php
+
+		-
+			message: '#^PHPDoc tag @param references unknown parameter\: \$parts$#'
+			identifier: parameter.notFound
+			count: 1
+			path: src/Commands/ProbeCommand.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between non\-empty\-string and '''' will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 1
+			path: src/Commands/ProbeCommand.php
+
+		-
+			message: '#^Unsafe usage of new static\(\)\.$#'
+			identifier: new.static
+			count: 1
+			path: src/Commands/ProbeCommand.php
+
+		-
+			message: '#^Call to function assert\(\) with true will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 2
+			path: src/Commands/RepeatCommand.php
+
+		-
+			message: '#^Instanceof between BAGArt\\TelegramBotNettools\\Commands\\ProbeCommand and BAGArt\\TelegramBotNettools\\Commands\\ProbeCommand will always evaluate to true\.$#'
+			identifier: instanceof.alwaysTrue
+			count: 1
+			path: src/Commands/RepeatCommand.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between class\-string\<BAGArt\\TelegramBotNettools\\Commands\\ProbeCommand\> and null will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 1
+			path: src/Commands/RepeatCommand.php
+
+		-
+			message: '#^Method BAGArt\\TelegramBotNettools\\Commands\\TraceCommand\:\:heavyCapSeconds\(\) never returns null so it can be removed from the return type\.$#'
+			identifier: return.unusedType
+			count: 1
+			path: src/Commands/TraceCommand.php
+
+		-
+			message: '#^Match expression does not handle remaining value\: string$#'
+			identifier: match.unhandled
+			count: 1
+			path: src/Mcp/NettoolsProbeTool.php
+
+		-
+			message: '#^Parameter \$targetRepo of method BAGArt\\TelegramBotNettools\\NettoolsServices\:\:forTests\(\) has invalid type BAGArt\\TelegramBotNettools\\TargetRepositoryContract\.$#'
+			identifier: class.notFound
+			count: 1
+			path: src/NettoolsServices.php
+
+		-
+			message: '#^Anonymous function never returns null so it can be removed from the return type\.$#'
+			identifier: return.unusedType
+			count: 1
+			path: src/Probes/AsnProbe.php
+
+		-
+			message: '#^Constant BAGArt\\TelegramBotNettools\\Probes\\AsnProbe\:\:PREFIX_SHOW is unused\.$#'
+			identifier: classConstant.unused
+			count: 1
+			path: src/Probes/AsnProbe.php
+
+		-
+			message: '#^PHPDoc tag @param for parameter \$call contains unresolvable type\.$#'
+			identifier: parameter.unresolvableType
+			count: 1
+			path: src/Probes/AsnProbe.php
+
+		-
+			message: '#^Template type T of method BAGArt\\TelegramBotNettools\\Probes\\AsnProbe\:\:viaBreaker\(\) is not referenced in a parameter\.$#'
+			identifier: method.templateTypeNotInParameter
+			count: 1
+			path: src/Probes/AsnProbe.php
+
+		-
+			message: '#^Property BAGArt\\TelegramBotNettools\\Probes\\DnsblProbe\:\:\$resolvers is never read, only written\.$#'
+			identifier: property.onlyWritten
+			count: 1
+			path: src/Probes/DnsblProbe.php
+
+		-
+			message: '#^Anonymous function never returns null so it can be removed from the return type\.$#'
+			identifier: return.unusedType
+			count: 1
+			path: src/Probes/GeoAsnProbe.php
+
+		-
+			message: '#^PHPDoc tag @param for parameter \$call contains unresolvable type\.$#'
+			identifier: parameter.unresolvableType
+			count: 1
+			path: src/Probes/GeoAsnProbe.php
+
+		-
+			message: '#^PHPDoc type for property BAGArt\\TelegramBotNettools\\Probes\\GeoAsnProbe\:\:\$v6Probe contains unresolvable type\.$#'
+			identifier: property.unresolvableType
+			count: 1
+			path: src/Probes/GeoAsnProbe.php
+
+		-
+			message: '#^PHPDoc type for property BAGArt\\TelegramBotNettools\\Probes\\GeoAsnProbe\:\:\$v6Probe with type mixed is not subtype of native type Closure\|null\.$#'
+			identifier: property.phpDocType
+			count: 1
+			path: src/Probes/GeoAsnProbe.php
+
+		-
+			message: '#^Strict comparison using \=\=\= between null and null will always evaluate to true\.$#'
+			identifier: identical.alwaysTrue
+			count: 1
+			path: src/Probes/GeoAsnProbe.php
+
+		-
+			message: '#^Template type T of method BAGArt\\TelegramBotNettools\\Probes\\GeoAsnProbe\:\:viaBreaker\(\) is not referenced in a parameter\.$#'
+			identifier: method.templateTypeNotInParameter
+			count: 1
+			path: src/Probes/GeoAsnProbe.php
+
+		-
+			message: '#^Static method BAGArt\\TelegramBotNettools\\Probes\\HttpProbe\:\:banner\(\) is unused\.$#'
+			identifier: method.unused
+			count: 1
+			path: src/Probes/HttpProbe.php
+
+		-
+			message: '#^Call to function is_string\(\) with string will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 1
+			path: src/Probes/MailAuditProbe.php
+
+		-
+			message: '#^Offset ''error'' on array\{reachable\: bool, starttls\: bool, cert_days_left\: int\|null, error\: string\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: src/Probes/MailAuditProbe.php
+
+		-
+			message: '#^Offset ''reachable'' on array\{reachable\: bool, starttls\: bool, cert_days_left\: int\|null, error\: string\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: src/Probes/MailAuditProbe.php
+
+		-
+			message: '#^Offset ''starttls'' on array\{reachable\: bool, starttls\: bool, cert_days_left\: int\|null, error\: string\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: src/Probes/MailAuditProbe.php
+
+		-
+			message: '#^Right side of && is always true\.$#'
+			identifier: booleanAnd.rightAlwaysTrue
+			count: 1
+			path: src/Probes/MailAuditProbe.php
+
+		-
+			message: '#^Comparison operation "\>" between 1 and 1 is always false\.$#'
+			identifier: greater.alwaysFalse
+			count: 1
+			path: src/Probes/OsHeuristicProbe.php
+
+		-
+			message: '#^Method BAGArt\\TelegramBotNettools\\Probes\\OsHeuristicProbe\:\:fuse\(\) should return list\<array\{family\: string, guess\: string, confidence\: string, source\: string\}\> but returns list\<array\{family\: string, confidence\: ''low'', source\: string, detail\: string\}\>\.$#'
+			identifier: return.type
+			count: 1
+			path: src/Probes/OsHeuristicProbe.php
+
+		-
+			message: '#^Offset 2 on array\{string, numeric\-string, ''''\|numeric\-string, non\-empty\-string\} in isset\(\) always exists and is not nullable\.$#'
+			identifier: isset.offset
+			count: 1
+			path: src/Probes/PingProbe.php
+
+		-
+			message: '#^PHPDoc tag @param references unknown parameter\: \$degraded$#'
+			identifier: parameter.notFound
+			count: 1
+			path: src/Probes/PingProbe.php
+
+		-
+			message: '#^PHPDoc tag @var for property BAGArt\\TelegramBotNettools\\Probes\\PingProbe\:\:\$runProcess contains unresolvable type\.$#'
+			identifier: property.unresolvableType
+			count: 1
+			path: src/Probes/PingProbe.php
+
+		-
+			message: '#^PHPDoc tag @var for property BAGArt\\TelegramBotNettools\\Probes\\PingProbe\:\:\$runProcess with type mixed is not subtype of native type Closure\|null\.$#'
+			identifier: property.phpDocType
+			count: 1
+			path: src/Probes/PingProbe.php
+
+		-
+			message: '#^PHPDoc tag @var for property BAGArt\\TelegramBotNettools\\Probes\\PingProbe\:\:\$tcpConnect contains unresolvable type\.$#'
+			identifier: property.unresolvableType
+			count: 1
+			path: src/Probes/PingProbe.php
+
+		-
+			message: '#^PHPDoc tag @var for property BAGArt\\TelegramBotNettools\\Probes\\PingProbe\:\:\$tcpConnect with type mixed is not subtype of native type Closure\|null\.$#'
+			identifier: property.phpDocType
+			count: 1
+			path: src/Probes/PingProbe.php
+
+		-
+			message: '#^PHPDoc tag @return contains unresolvable type\.$#'
+			identifier: return.unresolvableType
+			count: 1
+			path: src/Probes/PortProbe.php
+
+		-
+			message: '#^PHPDoc tag @var for property BAGArt\\TelegramBotNettools\\Probes\\PortProbe\:\:\$connector contains unresolvable type\.$#'
+			identifier: property.unresolvableType
+			count: 1
+			path: src/Probes/PortProbe.php
+
+		-
+			message: '#^PHPDoc tag @var for property BAGArt\\TelegramBotNettools\\Probes\\PortProbe\:\:\$connector with type mixed is not subtype of native type Closure\|null\.$#'
+			identifier: property.phpDocType
+			count: 1
+			path: src/Probes/PortProbe.php
+
+		-
+			message: '#^Constant BAGArt\\TelegramBotNettools\\Probes\\SecHeadersProbe\:\:HEADER_RULES \(list\<array\<string, string\>\>\) does not accept value array\{array\{''Strict\-Transport…'', ''no_hsts'', ''warn'', ''add Strict…''\}, array\{''Content\-Security…'', ''no_csp'', ''warn'', ''start with a report…''\}, array\{''X\-Frame\-Options'', ''no_xfo'', ''warn'', ''set X\-Frame\-Options…''\}, array\{''X\-Content\-Type…'', ''no_xcto'', ''warn'', ''set X\-Content\-Type…''\}, array\{''Referrer\-Policy'', ''no_referrer_policy'', ''warn'', ''set Referrer\-Policy…''\}\}\.$#'
+			identifier: classConstant.value
+			count: 1
+			path: src/Probes/SecHeadersProbe.php
+
+		-
+			message: '#^Method BAGArt\\TelegramBotNettools\\Probes\\SecHeadersProbe\:\:securityTxt\(\) never returns null so it can be removed from the return type\.$#'
+			identifier: return.unusedType
+			count: 1
+			path: src/Probes/SecHeadersProbe.php
+
+		-
+			message: '#^Offset ''eligible'' on array\{eligible\: bool, status\: string\|null\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: src/Probes/SecHeadersProbe.php
+
+		-
+			message: '#^PHPDoc tag @param references unknown parameter\: \$outcomeHeaders$#'
+			identifier: parameter.notFound
+			count: 1
+			path: src/Probes/SecHeadersProbe.php
+
+		-
+			message: '#^Call to function is_string\(\) with string will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 1
+			path: src/Probes/SslProbe.php
+
+		-
+			message: '#^Offset ''alpn_selected…'' on array\{\} in isset\(\) does not exist\.$#'
+			identifier: isset.offset
+			count: 1
+			path: src/Probes/SslProbe.php
+
+		-
+			message: '#^Offset ''protocol'' on array\{\} in isset\(\) does not exist\.$#'
+			identifier: isset.offset
+			count: 1
+			path: src/Probes/SslProbe.php
+
+		-
+			message: '#^Offset ''session_meta'' on array\{\} on left side of \?\? does not exist\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: src/Probes/SslProbe.php
+
+		-
+			message: '#^Offset ''ssl'' on array\{notification\: string, options\: array\<mixed\>\} on left side of \?\? does not exist\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: src/Probes/SslProbe.php
+
+		-
+			message: '#^Result of && is always false\.$#'
+			identifier: booleanAnd.alwaysFalse
+			count: 2
+			path: src/Probes/SslProbe.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between OpenSSLCertificate and null will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 1
+			path: src/Probes/SslProbe.php
+
+		-
+			message: '#^Variable \$cname on left side of \?\?\= always exists and is always null\.$#'
+			identifier: nullCoalesce.variable
+			count: 1
+			path: src/Probes/SubsProbe.php
+
+		-
+			message: '#^PHPDoc tag @var for property BAGArt\\TelegramBotNettools\\Probes\\TraceProbe\:\:\$onHop contains unresolvable type\.$#'
+			identifier: property.unresolvableType
+			count: 1
+			path: src/Probes/TraceProbe.php
+
+		-
+			message: '#^PHPDoc tag @var for property BAGArt\\TelegramBotNettools\\Probes\\TraceProbe\:\:\$onHop with type mixed is not subtype of native type Closure\|null\.$#'
+			identifier: property.phpDocType
+			count: 1
+			path: src/Probes/TraceProbe.php
+
+		-
+			message: '#^PHPDoc tag @var for property BAGArt\\TelegramBotNettools\\Probes\\TraceProbe\:\:\$runProcess contains unresolvable type\.$#'
+			identifier: property.unresolvableType
+			count: 1
+			path: src/Probes/TraceProbe.php
+
+		-
+			message: '#^PHPDoc tag @var for property BAGArt\\TelegramBotNettools\\Probes\\TraceProbe\:\:\$runProcess with type mixed is not subtype of native type Closure\|null\.$#'
+			identifier: property.phpDocType
+			count: 1
+			path: src/Probes/TraceProbe.php
+
+		-
+			message: '#^PHPDoc tag @var for property BAGArt\\TelegramBotNettools\\Probes\\TraceProbe\:\:\$runStreaming contains unresolvable type\.$#'
+			identifier: property.unresolvableType
+			count: 1
+			path: src/Probes/TraceProbe.php
+
+		-
+			message: '#^PHPDoc tag @var for property BAGArt\\TelegramBotNettools\\Probes\\TraceProbe\:\:\$runStreaming with type mixed is not subtype of native type Closure\|null\.$#'
+			identifier: property.phpDocType
+			count: 1
+			path: src/Probes/TraceProbe.php
+
+		-
+			message: '#^Method BAGArt\\TelegramBotNettools\\Sources\\DnsClient\:\:parseTxt\(\) never returns null so it can be removed from the return type\.$#'
+			identifier: return.unusedType
+			count: 1
+			path: src/Sources/DnsClient.php
+
+		-
+			message: '#^Offset ''A''\|''AAAA''\|''CAA''\|''CNAME''\|''DNSKEY''\|''DS''\|''MX''\|''NS''\|''PTR''\|''SOA''\|''TXT'' on array\{A\: 1, NS\: 2, CNAME\: 5, SOA\: 6, PTR\: 12, MX\: 15, TXT\: 16, AAAA\: 28, \.\.\.\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: src/Sources/DnsClient.php
+
+		-
+			message: '#^Offset ''rdlength'' does not exist on array\{1\: int, 2\: int, 3\: int, 4\: int\}\.$#'
+			identifier: offsetAccess.notFound
+			count: 2
+			path: src/Sources/DnsClient.php
+
+		-
+			message: '#^Parameter \#2 \.\.\.\$values of function sprintf expects bool\|float\|int\|string\|null, array\<int, int\> given\.$#'
+			identifier: argument.type
+			count: 1
+			path: src/Sources/DnsClient.php
+
+		-
+			message: '#^Strict comparison using \=\=\= between 1\|2\|5\|6\|12\|15\|16\|28\|43\|48\|257 and null will always evaluate to false\.$#'
+			identifier: identical.alwaysFalse
+			count: 1
+			path: src/Sources/DnsClient.php
+
+		-
+			message: '#^Strict comparison using \=\=\= between non\-falsy\-string and '''' will always evaluate to false\.$#'
+			identifier: identical.alwaysFalse
+			count: 1
+			path: src/Sources/DnsClient.php
+
+		-
+			message: '#^Call to function is_array\(\) with array\<string\> will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 1
+			path: src/Sources/PlatformFetcher.php
+
+		-
+			message: '#^Offset ''timed_out'' on array\{timed_out\: bool, blocked\: bool, eof\: bool, unread_bytes\: int, stream_type\: string, wrapper_type\: string, wrapper_data\: mixed, mode\: string, \.\.\.\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: src/Sources/StreamPort43Transport.php
+
+		-
+			message: '#^Call to function is_string\(\) with string will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 1
+			path: src/Support/DnsLookup.php
+
+		-
+			message: '#^Strict comparison using \=\=\= between int and null will always evaluate to false\.$#'
+			identifier: identical.alwaysFalse
+			count: 1
+			path: src/Support/HomographCheck.php
+
+		-
+			message: '#^Negated boolean expression is always false\.$#'
+			identifier: booleanNot.alwaysFalse
+			count: 1
+			path: src/Support/TargetNormalizer.php
+
+		-
+			message: '#^PHPDoc tag @throws with type BAGArt\\TelegramBotNettools\\Contracts\\Exceptions\\NxDomainException\|BAGArt\\TelegramBotNettools\\Contracts\\Exceptions\\TargetBlockedException\|BAGArt\\TelegramBotNettools\\Support\\InvalidTargetException is not subtype of Throwable$#'
+			identifier: throws.notThrowable
+			count: 1
+			path: src/Support/TargetPipeline.php
+
+		-
+			message: '#^Property BAGArt\\TelegramBotNettools\\Results\\ProbeResult\:\:\$degradedSources \(list\<string\>\) on left side of \?\? is not nullable\.$#'
+			identifier: nullCoalesce.property
+			count: 1
+			path: src/Ui/DnsCard.php
+
+		-
+			message: '#^Right side of && is always true\.$#'
+			identifier: booleanAnd.rightAlwaysTrue
+			count: 1
+			path: src/Ui/MyCard.php
+
+		-
+			message: '#^Offset ''severity'' on array\{severity\: string, id\: string, detail\: string\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: src/Ui/SslCard.php
+
+		-
+			message: '#^Method BAGArt\\TelegramBotNettools\\Ui\\WhoisCard\:\:registrarLine\(\) never returns null so it can be removed from the return type\.$#'
+			identifier: return.unusedType
+			count: 1
+			path: src/Ui/WhoisCard.php
+
+		-
+			message: '#^Method BAGArt\\TelegramBotNettools\\Sources\\DnsTransportContract@anonymous/tests/Unit/DnsClientTest\.php\:42\:\:askUdp\(\) never returns null so it can be removed from the return type\.$#'
+			identifier: return.unusedType
+			count: 1
+			path: tests/Unit/DnsClientTest.php
+
+		-
+			message: '#^Parameter \#3 \$recordType of method BAGArt\\TelegramBotNettools\\Sources\\DnsClient\:\:query\(\) expects ''A''\|''AAAA''\|''CAA''\|''CNAME''\|''DNSKEY''\|''DS''\|''MX''\|''NS''\|''PTR''\|''SOA''\|''TXT'', ''HINFO'' given\.$#'
+			identifier: argument.type
+			count: 1
+			path: tests/Unit/DnsClientTest.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>text" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: tests/Unit/HeavySlotWiringTest.php
+
+		-
+			message: '#^Call to function class_exists\(\) with ''BAGArt…'' will always evaluate to false\.$#'
+			identifier: function.impossibleType
+			count: 1
+			path: tests/Unit/ModuleFlowsTest.php
+
+		-
+			message: '#^Anonymous function never returns null so it can be removed from the return type\.$#'
+			identifier: return.unusedType
+			count: 2
+			path: tests/Unit/SslProbeTest.php
+
+		-
+			message: '#^Parameter \#1 \$byUrl of class BAGArt\\TelegramBotNettools\\Tests\\Support\\FakeHttpSource constructor expects array\<string, array\<string, mixed\>\>, array\<string, array\<int, array\<string, list\<string\>\>\>\> given\.$#'
+			identifier: argument.type
+			count: 1
+			path: tests/Unit/SubsProbeTest.php
+
+		-
+			message: '#^Parameter \#1 \$byUrl of class BAGArt\\TelegramBotNettools\\Tests\\Support\\FakeHttpSource constructor expects array\<string, array\<string, mixed\>\>, array\<string, array\<int, array\<string, string\>\>\> given\.$#'
+			identifier: argument.type
+			count: 7
+			path: tests/Unit/SubsProbeTest.php

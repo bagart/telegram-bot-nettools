@@ -41,7 +41,7 @@ final class PlatformFetcher implements FetcherContract
 
         /** @var array<string, string> $headers */
         $headers = [];
-        foreach ($response->getHeaders() as $name => $values) {
+        foreach ((array) $response->getHeaders() as $name => $values) {
             $first = is_array($values) ? ($values[0] ?? null) : $values;
             if (is_string($first)) {
                 $headers[strtolower($name)] = $first;

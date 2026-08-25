@@ -120,6 +120,12 @@ final class QuotaLedger
 
         $chatUsed = $this->bumpAndCheck(self::CHAT_KEY_PREFIX.$chatId, $weight, $this->chatCeiling, false);
         if ($chatUsed !== null) {
+            // Chat ceiling denied the run AFTER the user ledger was bumped —
+            // refund it so denial consumes nothing (todo P2-4).
+            if ($userId !== null) {
+                $this->refund($this->userKey($chatId, $userId), $weight);
+            }
+
             throw new QuotaExceededException($chatUsed, $this->chatCeiling, $this->resetsInMinutes($chatId, null));
         }
     }
@@ -171,6 +177,12 @@ final class QuotaLedger
         }
 
         return null;
+    }
+
+    /** Compensating decrement after a denial that followed a successful user bump. */
+    private function refund(string $key, int $weight): void
+    {
+        $this->cache->incrementWithTtl($key, -$weight, self::WINDOW_SECONDS);
     }
 
     private function userKey(int|string $chatId, int|string $userId): string

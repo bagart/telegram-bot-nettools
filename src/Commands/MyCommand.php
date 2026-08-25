@@ -126,7 +126,7 @@ final class MyCommand implements TgModuleProcessorContract
         }
 
         return [
-            'text' => '<b>🎯 '.htmlspecialchars($host, ENT_QUOTES).'</b>',
+            'text' => \BAGArt\TelegramBotNettools\Ui\MyCard::contextTitle($host),
             'keyboard' => TargetContextKb::rows(
                 $chatId,
                 $buttons,

@@ -9,14 +9,17 @@ use BAGArt\TelegramBotNettools\Results\NetTarget;
 use BAGArt\TelegramBotNettools\Results\ProbeOptions;
 use BAGArt\TelegramBotNettools\Results\ProbeResult;
 use BAGArt\TelegramBotNettools\Sources\DnsClient;
+use BAGArt\TelegramBotNettools\Support\SourceBreaker;
 
 /**
  * /dnsbl A-query against ~10 major DNSBL zones (RFC §7.12, admin-gated).
- * NXDOMAIN = clean; an answer = listed. Parallelism is bounded by the
- * blocking model — queries run sequentially with 2s caps (≤3s typical).
+ * NXDOMAIN = clean; an answer = listed. Queries run sequentially under a
+ * hard wall cap ({@see self::WALL_CAP_SECONDS}): zones past the deadline and
+ * timed-out zones are reported as degraded sources — never silently skipped.
  */
 final class DnsblProbe implements NettoolsProbeContract
 {
+    public const int WALL_CAP_SECONDS = 6;
     public const array ZONES = [
         'zen.spamhaus.org',
         'b.barracudacentral.org',
@@ -34,6 +37,7 @@ final class DnsblProbe implements NettoolsProbeContract
         private readonly DnsClient $dns,
         private readonly array $resolvers,
         private readonly int $timeoutSeconds = 2,
+        private readonly ?SourceBreaker $breaker = null,
     ) {
     }
 
@@ -67,11 +71,26 @@ final class DnsblProbe implements NettoolsProbeContract
         $resolver = $this->resolvers()[0] ?? '1.1.1.1';
 
         $listed = [];
+        $degraded = [];
         $checked = 0;
+        $timedOut = 0;
 
         foreach (self::ZONES as $zone) {
+            if (microtime(true) - $startedAt > self::WALL_CAP_SECONDS) {
+                // Wall budget spent: remaining zones degrade visibly, not silently
+                $skipped = count(self::ZONES) - $checked - $timedOut;
+                if ($skipped > 0) {
+                    $degraded[] = "dnsbl:wall-cap({$skipped} zones)";
+                }
+
+                break;
+            }
+
             $answer = $this->dns->query($resolver, "{$reversed}.{$zone}", 'A', $this->timeoutSeconds);
             if ($answer === null) {
+                $timedOut++;
+                $degraded[] = 'dnsbl:'.$zone;
+
                 continue;
             }
             $checked++;
@@ -84,11 +103,20 @@ final class DnsblProbe implements NettoolsProbeContract
             }
         }
 
+        if ($this->breaker !== null) {
+            // every zone unanswered → source down; any answer → healthy
+            if ($checked === 0) {
+                $this->breaker->recordFailure('dnsbl');
+            } else {
+                $this->breaker->recordSuccess('dnsbl');
+            }
+        }
+
         return new ProbeResult(
             probe: $this->name(),
             fetchedAt: 0,
             latencyMs: (int) round((microtime(true) - $startedAt) * 1000),
-            degradedSources: [],
+            degradedSources: $degraded,
             payload: [
                 'host' => $target->host,
                 'ip' => $ip,

@@ -121,7 +121,7 @@ final class MmdbReader implements MmdbContract
     private function shapeAsn(array $record): ?array
     {
         $asn = filter_var($record['autonomous_system_number'] ?? null, FILTER_VALIDATE_INT);
-        if ($asn === false || $asn === null) {
+        if ($asn === false || $asn === 0) {
             return null;
         }
 

@@ -17,8 +17,6 @@ use BAGArt\TelegramBotNettools\Ui\Keyboards\MenuBackRow;
  */
 final class HttpCard
 {
-    private const string ERROR_TEXTS = '';
-
     public static function render(ProbeResult $result, int $chatId, int $now, string $targetHost): array
     {
         $esc = HtmlRenderer::esc(...);
@@ -80,12 +78,26 @@ final class HttpCard
                 $hopLines[] = $arrow.$esc((string) $host).' ['.(int) $hop['status'].', '.(int) $hop['ms'].' ms]';
             }
             $sections[] = new Section('Redirect chain ('.count($chain).' hops)', $hopLines, monospace: true);
-        } elseif ($status >= 300 && $status < 400) {
-            $sections[] = new Section('', ['ℹ️ Redirect without a usable Location header']);
-        } elseif ($status === 404) {
-            $sections[] = new Section('', ['ℹ️ Not found — page missing (a result, not a probe error)']);
-        } elseif ($status >= 500) {
-            $sections[] = new Section('', ['ℹ️ Server-side error — the site itself is failing']);
+        }
+
+        if (is_array($p['blocked_redirect'] ?? null)) {
+            /** @var array{url: string, reason: string} $blocked */
+            $blocked = $p['blocked_redirect'];
+            $reason = str_contains((string) $blocked['reason'], 'downgrade')
+                ? 'https → http downgrade denied'
+                : (str_contains((string) $blocked['reason'], 'ssrf_blocked')
+                    ? 'target is a private/reserved address (SSRF guard)'
+                    : 'unsafe redirect target');
+            $blockedHost = parse_url($blocked['url'], PHP_URL_HOST) ?: $blocked['url'];
+            $sections[] = new Section('', ['⛔ '.$esc((string) $blockedHost).' — redirect blocked: '.$reason]);
+        } elseif (count($chain) <= 1) {
+            if ($status >= 300 && $status < 400) {
+                $sections[] = new Section('', ['ℹ️ Redirect without a usable Location header']);
+            } elseif ($status === 404) {
+                $sections[] = new Section('', ['ℹ️ Not found — page missing (a result, not a probe error)']);
+            } elseif ($status >= 500) {
+                $sections[] = new Section('', ['ℹ️ Server-side error — the site itself is failing']);
+            }
         }
 
         $footer = (new Footer())->add('http', $result->latencyMs);
@@ -113,8 +125,4 @@ final class HttpCard
         return round($bytes / 1048576, 2).' MB';
     }
 
-    private static function str(mixed $value): ?string
-    {
-        return is_string($value) && trim($value) !== '' ? trim($value) : null;
-    }
 }

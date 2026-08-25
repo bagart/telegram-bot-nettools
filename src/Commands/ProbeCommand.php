@@ -21,6 +21,7 @@ use BAGArt\TelegramBotNettools\Results\NetTarget;
 use BAGArt\TelegramBotNettools\Results\ProbeOptions;
 use BAGArt\TelegramBotNettools\Results\ProbeResult;
 use BAGArt\TelegramBotNettools\Ui\Button;
+use BAGArt\TelegramBotNettools\Ui\CallbackGrammar;
 use BAGArt\TelegramBotNettools\Ui\ErrorCard;
 
 /**
@@ -101,6 +102,11 @@ abstract class ProbeCommand implements TgModuleProcessorContract
     /** Chat-overlay settings resolved at execute() start (RFC §3.5). */
     protected \BAGArt\TelegramBotNettools\NettoolsSettings $effSettings;
 
+    /** Bot/chat of the run in flight — for probe factories needing egress UX. */
+    protected TgBotConfig $activeBotConfig;
+
+    protected string $activeChatId = '';
+
     public function execute(
         TgBotConfig $botConfig,
         string $chatId,
@@ -110,6 +116,8 @@ abstract class ProbeCommand implements TgModuleProcessorContract
         ?MessageTypeDTO $dto = null,
     ): void {
         $this->callerUserId = $userId;
+        $this->activeBotConfig = $botConfig;
+        $this->activeChatId = $chatId;
 
         if ($dto !== null && ($card = $this->etiquetteGate($dto, $botConfig, $chatId)) !== null) {
             $this->sendCard($botConfig, $chatId, $card);
@@ -177,7 +185,7 @@ abstract class ProbeCommand implements TgModuleProcessorContract
             if (getenv('NT_DEBUG') !== false) {
                 throw $exception;
             }
-            $card = ErrorCard::fromException($exception, (int) $chatId);
+            $card = ErrorCard::fromException($exception, (int) $chatId, CallbackGrammar::encode('retry', (int) $chatId));
         } finally {
             if ($heavyCap !== null) {
                 $this->services->semaphore->release();
@@ -222,7 +230,7 @@ abstract class ProbeCommand implements TgModuleProcessorContract
         $this->services->cache->put('tg-nettools:etq:'.$chatId, 1, 3600);
 
         return $hinted ? null : [
-            'text' => '<i>Tip: in groups reply to a message or @mention the bot to run nettools commands.</i>',
+            'text' => Messages::format('group_etiquette_tip'),
             'keyboard' => [],
         ];
     }

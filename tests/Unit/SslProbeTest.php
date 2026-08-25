@@ -24,7 +24,7 @@ final class SslProbeTest extends TestCase
 
         self::assertTrue($result->payload['has_tls']);
         self::assertNull($result->payload['error']);
-        self::assertSame([], $result->payload['findings']);
+        self::assertSame(['revocation_unchecked'], array_column($result->payload['findings'], 'id'));
         self::assertSame([], $result->degradedSources);
         self::assertSame('TLS1.3', $result->payload['protocol']);
         self::assertSame(['h2'], $result->payload['alpn']);
@@ -53,7 +53,7 @@ final class SslProbeTest extends TestCase
             'valid_to' => $now - 10 * 86400,
         ]])->probe(self::target(), new ProbeOptions(timeoutSeconds: 5));
 
-        self::assertSame([['severity' => 'high', 'id' => 'expired']], array_map(
+        self::assertContains(['severity' => 'high', 'id' => 'expired'], array_map(
             static fn (array $finding): array => ['severity' => $finding['severity'], 'id' => $finding['id']],
             $expired->payload['findings'],
         ));

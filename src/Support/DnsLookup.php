@@ -4,11 +4,13 @@ declare(strict_types=1);
 
 namespace BAGArt\TelegramBotNettools\Support;
 
+use BAGArt\TelegramBotNettools\Contracts\DnsResolverContract;
+
 /**
  * Thin resolution seam over PHP's DNS functions. Phase 0 stop-gap — Phase 1
  * replaces it with the internal DnsClient (RFC D5) behind the same call shape.
  */
-final class DnsLookup
+final class DnsLookup implements DnsResolverContract
 {
     /** @return list<string> resolved addresses; empty = no answers */
     public function resolveIps(string $host): array

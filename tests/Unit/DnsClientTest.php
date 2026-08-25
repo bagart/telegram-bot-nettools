@@ -16,14 +16,69 @@ use PHPUnit\Framework\TestCase;
  */
 final class DnsClientTest extends TestCase
 {
-    public function test_query_bytes_match_golden_wire_format(): void
+    public function test_query_bytes_match_golden_wire_format_with_edns(): void
     {
         $wire = DnsClient::encodeQuery('example.com', 1, 0x1234);
 
-        self::assertSame(
-            '123401000001000000000000076578616d706c6503636f6d00010001',
-            bin2hex($wire),
-        );
+        $header = '1234'          // id
+            .'0100'               // RD=1
+            .'0001'               // qdcount
+            .'00000000'           // an/ns counts
+            .'0001';              // arcount = 1 (EDNS OPT)
+        $question = '076578616d706c6503636f6d00' // example.com
+            .'0001'                              // QTYPE=A
+            .'0001';                             // QCLASS=IN
+        $opt = '00'              // root name
+            .'0029'              // TYPE=OPT
+            .sprintf('%04x', DnsClient::EDNS_BUFFER_SIZE) // requestor's UDP size
+            .'00000000'          // extended rcode/flags
+            .'0000';             // rdlength
+
+        self::assertSame($header.$question.$opt, bin2hex($wire));
+    }
+
+    public function test_answer_id_mismatch_is_dropped_and_retried_bounded(): void
+    {
+        $transport = new class () implements \BAGArt\TelegramBotNettools\Sources\DnsTransportContract {
+            public int $asked = 0;
+
+            /** Spoofed answer: fixed WRONG id. */
+            public function askUdp(string $serverIp, string $wireQuery, int $timeoutSeconds): ?string
+            {
+                $this->asked++;
+
+                $body = FakeDnsTransport::response('example.com', 1, [
+                    ['type' => 1, 'rdata' => inet_pton('93.184.216.34')],
+                ]);
+
+                return "\xbe\xef".substr($body, 2);
+            }
+
+            public function askTcp(string $serverIp, string $wireQuery, int $timeoutSeconds): ?string
+            {
+                return null;
+            }
+        };
+
+        $answer = (new DnsClient($transport))->query('192.0.2.53', 'example.com', 'A', 2);
+
+        self::assertNull($answer, 'off-path/spoofed answers must never be accepted');
+        self::assertSame(2, $transport->asked, 'bounded fresh-ID retry');
+    }
+
+    public function test_matching_id_is_accepted_and_edns_opt_skipped_in_decode(): void
+    {
+        $query = DnsClient::encodeQuery('example.com', 1, 0x1234);
+        $response = FakeDnsTransport::response('example.com', 1, [
+            ['type' => 1, 'rdata' => inet_pton('93.184.216.34')],
+        ]);
+
+        $matched = DnsClient::decodeResponse(substr($query, 0, 2).substr($response, 2), 0x1234);
+        $mismatched = DnsClient::decodeResponse($response, 0x4321);
+
+        self::assertNotNull($matched);
+        self::assertSame(['93.184.216.34'], $matched->records['A'], 'OPT record in additional section is skipped');
+        self::assertNull($mismatched);
     }
 
     public function test_encode_rejects_bad_labels(): void

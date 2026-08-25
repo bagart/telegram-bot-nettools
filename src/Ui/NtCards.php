@@ -137,4 +137,19 @@ final class NtCards
             $entry->weight,
         );
     }
+    /**
+     * /nt doctor source-health table (§3.2). Pure renderer; the command
+     * gathers capability + breaker rows.
+     *
+     * @param  list<string>  $capabilityLines
+     * @param  list<string>  $sourceLines
+     */
+    public static function doctor(array $capabilityLines, array $sourceLines): string
+    {
+        return (new HtmlRenderer())->render('NETTOOLS DOCTOR', [
+            new Section('Capabilities', array_map(static fn (string $l): string => HtmlRenderer::esc($l), $capabilityLines)),
+            new Section('Sources', array_map(static fn (string $l): string => HtmlRenderer::esc($l), $sourceLines)),
+        ], null);
+    }
+
 }

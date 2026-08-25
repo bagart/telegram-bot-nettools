@@ -43,6 +43,7 @@ final class DnsblCommand extends ProbeCommand
                 dns: new DnsClient($this->services->dnsTransport),
                 resolvers: $this->services->resolvers(),
                 timeoutSeconds: $this->effSettings->timeoutDns,
+                breaker: $this->services->breaker,
             ),
             new ProbeOptions(timeoutSeconds: 3),
         ];
@@ -65,8 +66,10 @@ final class DnsblCommand extends ProbeCommand
 
         if (! $this->services->settings->dnsblEnabled || ! $this->services->quota->isAdminChat($chatId)) {
             $this->sendCard($botConfig, $chatId, [
-                'text' => "🔒 /".self::NAME." is restricted to admin chats with the feature enabled.\n\n".
-                    Messages::format('usage_target', ['command' => self::NAME]),
+                'text' => Messages::format('admin_gate_denied', [
+                    'command' => self::NAME,
+                    'usage' => Messages::format('usage_target', ['command' => self::NAME]),
+                ]),
                 'keyboard' => [[new Button('💰 Quota', CallbackGrammar::encode('quota', (int) $chatId))]],
             ]);
 

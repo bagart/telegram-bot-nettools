@@ -25,14 +25,14 @@ final class EloquentTargetRepository implements TargetRepositoryContract
                 'host' => $host,
                 'use_count' => 1,
                 'habits' => [],
-                'last_used_at' => now(),
+                'last_used_at' => \Illuminate\Support\Carbon::now(),
             ]);
 
             return true;
         }
 
         $row->use_count += 1;
-        $row->last_used_at = now();
+        $row->last_used_at = \Illuminate\Support\Carbon::now();
         $row->save();
 
         return false;
@@ -80,6 +80,7 @@ final class EloquentTargetRepository implements TargetRepositoryContract
 
     public function evictBeyond(int $userId, int $cap): array
     {
+        /** @var \Illuminate\Database\Eloquent\Collection<int, TgNettoolsTarget> $rows */
         $rows = TgNettoolsTarget::query()
             ->where('user_id', $userId)
             ->orderByDesc('pinned')
@@ -101,10 +102,13 @@ final class EloquentTargetRepository implements TargetRepositoryContract
 
     public function forUser(int $userId): array
     {
-        return TgNettoolsTarget::query()
+        /** @var \Illuminate\Database\Eloquent\Collection<int, TgNettoolsTarget> $rows */
+        $rows = TgNettoolsTarget::query()
             ->where('user_id', $userId)
             ->orderByDesc('last_used_at')
-            ->get()
+            ->get();
+
+        return $rows
             ->map(static fn (TgNettoolsTarget $row): array => [
                 'host' => $row->host,
                 'label' => $row->label,

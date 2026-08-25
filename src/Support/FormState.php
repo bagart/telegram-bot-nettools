@@ -22,7 +22,7 @@ final class FormState
     }
 
     /**
-     * @param  array{action: string, extra?: string}  $state
+     * @param  array<string, mixed>  $state
      */
     public function set(int|string $chatId, int|string|null $userId, array $state): void
     {

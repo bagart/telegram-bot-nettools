@@ -13,17 +13,36 @@ use BAGArt\AsyncKernel\Contracts\ASKPromiseContract;
  * ApiClientContract double returning RAW string bodies — exercises the
  * production PlatformHttp decode path exactly as wire responses arrive
  * (top-level JSON arrays included), unlike the pre-decoded FakeHttpSource.
+ *
+ * Entry shapes:
+ *  - string                 → 200 with that body
+ *  - array{status, body, headers} → explicit outcome (redirect fixtures)
  */
 final class RawBodyApiClient implements ApiClientContract
 {
-    /** @param array<string, string> $byUrl url → raw response body */
+    /** @var list<string> */
+    public array $requestedUrls = [];
+
+    /** @param array<string, string|array{status?: int, body?: string, headers?: array<string, string>}> $byUrl */
     public function __construct(private readonly array $byUrl = [])
     {
     }
 
     public function request(ASKHttpRequest $request): ASKHttpResponse
     {
-        return ASKHttpResponse::fromString($this->byUrl[$request->url] ?? '');
+        $this->requestedUrls[] = $request->url;
+
+        $entry = $this->byUrl[$request->url] ?? '';
+
+        if (is_string($entry)) {
+            return ASKHttpResponse::fromString($entry);
+        }
+
+        return ASKHttpResponse::fromString(
+            (string) ($entry['body'] ?? ''),
+            (int) ($entry['status'] ?? 200),
+            headers: (array) ($entry['headers'] ?? []),
+        );
     }
 
     public function requestAsync(ASKHttpRequest $request): ASKPromiseContract

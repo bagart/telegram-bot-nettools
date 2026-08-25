@@ -46,6 +46,7 @@ final class SubsCommand extends ProbeCommand
                 new DnsClient($this->services->dnsTransport),
                 $this->resolvers(),
                 $this->effSettings->timeoutDns,
+                fetcher: $this->services->fetcher,
             ),
             new ProbeOptions(flags: [SubsProbe::FLAG_BRUTE => false], timeoutSeconds: 10),
         ];

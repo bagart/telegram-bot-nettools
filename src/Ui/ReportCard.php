@@ -13,8 +13,6 @@ use BAGArt\TelegramBotNettools\Formatting\Section;
  */
 final class ReportCard
 {
-    private const array GLYPHS = ['✅', '⚠️', '❌'];
-
     /**
      * @param  array<string, \BAGArt\TelegramBotNettools\Results\ProbeResult>  $results
      * @param  list<string>  $degraded  "probe:source" entries

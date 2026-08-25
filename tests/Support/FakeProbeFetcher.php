@@ -19,6 +19,9 @@ final class FakeProbeFetcher implements FetcherContract
     /** @var array<string, string|array<string, mixed>> */
     private array $scripted = [];
 
+    /** @var list<array<int, mixed>> curl options seen per fetch (pin assertions) */
+    public array $curlOptionsSeen = [];
+
     /** @param array<string, string|array<string, mixed>> $entries */
     public function __construct(array $entries = [])
     {
@@ -34,6 +37,8 @@ final class FakeProbeFetcher implements FetcherContract
 
     public function fetch(string $url, string $method, int $timeoutSeconds, array $headers = [], array $curlOptions = []): FetchOutcome
     {
+        $this->curlOptionsSeen[] = $curlOptions;
+
         $entry = $this->scripted[$this->normalize($url)] ?? null;
 
         if ($entry === null) {

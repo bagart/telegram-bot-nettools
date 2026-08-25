@@ -42,6 +42,7 @@ final class MailCommand extends ProbeCommand
                 resolvers: $this->services->resolvers(),
                 timeoutSeconds: $this->effSettings->timeoutDns,
                 smtpCheck: $this->smtpRequested ? self::smtpChecker() : null,
+                fetcher: $this->services->fetcher,
             ),
             new ProbeOptions(timeoutSeconds: $this->effSettings->timeoutDns),
         ];
@@ -100,7 +101,7 @@ final class MailCommand extends ProbeCommand
         $outcome = self::smtpChecker()($mx);
 
         return [
-            'text' => self::smtpCardText($target->host, $mx, $outcome),
+            'text' => MailCard::smtpCheckText($target->host, $mx, $outcome),
             'keyboard' => [],
         ];
     }
@@ -177,32 +178,5 @@ final class MailCommand extends ProbeCommand
                 'error' => null,
             ];
         };
-    }
-
-    /** @param array{reachable:bool,starttls:bool,cert_days_left:?int,error:?string} $outcome */
-    private static function smtpCardText(string $host, string $mx, array $outcome): string
-    {
-        if (! $outcome['reachable']) {
-            $reason = HtmlRenderer::esc((string) $outcome['error']);
-
-            return "<b>SMTP · {$host}</b>\n⚠️ {$reason}";
-        }
-
-        $lines = [
-            '<b>SMTP · '.$host.' → '.$mx.':25</b>',
-            str_pad('EHLO', 12).'✅ answered',
-            str_pad('STARTTLS', 12).($outcome['starttls'] ? '✅ offered' : '❌ NOT offered — mail in plaintext'),
-        ];
-
-        if (is_int($outcome['cert_days_left'])) {
-            $lines[] = str_pad('MX cert', 12)."valid, {$outcome['cert_days_left']}d left";
-        }
-
-        $lines[] = '';
-        $lines[] = $outcome['starttls']
-            ? 'ℹ️ Inbound TLS looks configured. Verify SPF/DMARC via /reco.'
-            : '❌ Enable TLS on the mail exchanger (RFC 3207) — high-severity finding.';
-
-        return implode("\n", $lines);
     }
 }

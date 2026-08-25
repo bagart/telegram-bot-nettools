@@ -3,6 +3,7 @@
 namespace BAGArt\TelegramBotNettools\Ui;
 
 use BAGArt\TelegramBotNettools\Formatting\HtmlRenderer;
+use BAGArt\TelegramBotNettools\Formatting\Section;
 use BAGArt\TelegramBotNettools\Support\HumanTime;
 
 /**
@@ -68,4 +69,10 @@ final class MyCard
             'keyboard' => $keyboard,
         ];
     }
+    /** Context-screen headline for the router ('ctx' action). */
+    public static function contextTitle(string $host): string
+    {
+        return '<b>🎯 '.htmlspecialchars($host, ENT_QUOTES).'</b>';
+    }
+
 }

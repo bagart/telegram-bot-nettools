@@ -30,8 +30,8 @@ Shipped:
 ## Command surface (MVP complete)
 
 RECON: `/ip` (`/geo`) · `/whois` · `/dns` (+ propagation/diagnostics actions)
-· `/asn` · `/http` · `/subs`
-NETWORK: `/ping` (+ world ping) · `/trace` · `/port` · `/os`
+· `/asn` · `/http` · `/subs` (takeover hints fetch-verified against provider not-found pages)
+NETWORK: `/ping` (+ world ping, progressive draft previews) · `/trace` (hops stream live via `sendMessageDraft`, final card persists) · `/port` · `/os`
 AUDIT: `/ssl` · `/sec` (+ CORS/methods flags) · `/mail` (+ live SMTP check)
 · `/reco` · `/report`
 UI: `/nt` menu hub with tools grid, settings and `/nt doctor`; `/my` target
@@ -58,6 +58,17 @@ MCP tool: `NettoolsProbeTool` for AI agents (same guard/quota path).
   `tg-nettools:heavy` (one heavy probe per deployment; busy callers get a
   retry-in-~Ns card and are not quota-charged). Revisit triggers: >5 heavy
   probes/min sustained or >1 worker per bot.
+- **Highload checklist (Phase 4.1 self-review)**:
+  | Probe | Timeout | Semaphore | Cache TTL | Flush-on-shutdown |
+  |---|---|---|---|---|
+  | ping | 4s wall | heavy slot | never (measurement) | n/a (proc closed per call) |
+  | trace | 15s wall | heavy slot | never | n/a |
+  | portscan | 10s wall, ≤32 sockets | admin-only | never | sockets closed per probe |
+  | http/sec/ssl | 3–5s each hop | — | 1h | transport-managed |
+  | whois/dns/asn/ip/mail/subs | 2–8s per source | single-flight cache lock | 30min–24h | cache adapter |
+  All egress goes through SSRF-guarded pins (`CURLOPT_RESOLVE`) with the
+  single-resolution invariant; breaker keys and quota ledger are plain cache
+  counters (safe to lose on flush).
 - **Benchmark**: `php misc/BAGArt/telegram-bot-nettools/tools/bench.php`
   prints per-probe latency over fixture targets (no egress).
 

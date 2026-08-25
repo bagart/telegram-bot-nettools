@@ -33,7 +33,7 @@ final class MailCard
         }
 
         /** @var list<string> $degraded */
-        $degraded = array_values(array_filter(array_map(strval(...), (array) ($result->degradedSources ?? []))));
+        $degraded = array_values(array_filter(array_map(strval(...), (array) $result->degradedSources)));
         foreach ($degraded as $resolver) {
             $sections[] = new Section('', ['⚠️ Resolver '.$esc($resolver).' unavailable — partial results']);
         }
@@ -162,4 +162,36 @@ final class MailCard
 
         return mb_strlen($record) > $max ? mb_substr($record, 0, $max - 1).'…' : $record;
     }
+    /**
+     * Live SMTP check card (RFC §7.9 action): EHLO/STARTTLS verdict with an
+     * honest egress-limitation note when :25 is unreachable.
+     *
+     * @param  array{reachable:bool, starttls:bool, cert_days_left:?int, error:?string}  $outcome
+     */
+    public static function smtpCheckText(string $host, string $mx, array $outcome): string
+    {
+        if (! $outcome['reachable']) {
+            $reason = HtmlRenderer::esc((string) ($outcome['error'] ?? 'connection failed'));
+
+            return '<b>SMTP · '.HtmlRenderer::esc($host).'</b>\n⚠️ '.$reason;
+        }
+
+        $lines = [
+            '<b>SMTP · '.HtmlRenderer::esc($host).' → '.HtmlRenderer::esc($mx).':25</b>',
+            str_pad('EHLO', 12).'✅ answered',
+            str_pad('STARTTLS', 12).($outcome['starttls'] ? '✅ offered' : '❌ NOT offered — mail in plaintext'),
+        ];
+
+        if (is_int($outcome['cert_days_left'])) {
+            $lines[] = str_pad('MX cert', 12)."valid, {$outcome['cert_days_left']}d left";
+        }
+
+        $lines[] = '';
+        $lines[] = $outcome['starttls']
+            ? 'ℹ️ Inbound TLS looks configured. Verify SPF/DMARC via /reco.'
+            : '❌ Enable TLS on the mail exchanger (RFC 3207) — high-severity finding.';
+
+        return implode("\n", $lines);
+    }
+
 }

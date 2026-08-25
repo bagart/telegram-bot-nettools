@@ -8,6 +8,7 @@ use BAGArt\TelegramBot\Configs\TgBotConfig;
 use BAGArt\TelegramBot\Contracts\Outbound\TgSenderContract;
 use BAGArt\TelegramBot\Contracts\TgApi\TgApiMethodDTOContract;
 use BAGArt\TelegramBot\TgApi\Methods\DTO\AnswerCallbackQueryMethodDTO;
+use BAGArt\TelegramBot\TgApi\Methods\DTO\SendMessageDraftMethodDTO;
 use BAGArt\TelegramBot\TgApi\Methods\DTO\SendMessageMethodDTO;
 
 /**
@@ -52,7 +53,7 @@ final class CapturingSender implements TgSenderContract
         $out = [];
         foreach ($this->messages() as $m) {
             $rows = [];
-            /** @var list<list<InlineKeyboardButtonTypeShape>>|null $markup */
+            /** @var list<list<\BAGArt\TelegramBot\TgApi\Types\DTO\InlineKeyboardButtonTypeDTO>>|null $markup */
             $markup = $m->replyMarkup?->inlineKeyboard;
             foreach ((array) $markup as $row) {
                 $buttons = [];
@@ -72,4 +73,10 @@ final class CapturingSender implements TgSenderContract
     {
         return array_values(array_filter($this->sent, static fn ($m) => $m instanceof AnswerCallbackQueryMethodDTO));
     }
+    /** @return list<SendMessageDraftMethodDTO> */
+    public function drafts(): array
+    {
+        return array_values(array_filter($this->sent, static fn ($m) => $m instanceof SendMessageDraftMethodDTO));
+    }
+
 }

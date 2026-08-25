@@ -52,6 +52,8 @@ final readonly class NettoolsServices
         public ?SourceBreaker $breaker = null,
         public ?\Psr\Log\LoggerInterface $logger = null,
         public ?Contracts\TargetRepositoryContract $targetRepo = null,
+        /** Test seam: fn(list<string> $argv): array{exit:int,out:string} for /trace */
+        public ?\Closure $traceFakeRun = null,
     ) {
     }
 
@@ -70,6 +72,7 @@ final readonly class NettoolsServices
         ?Port43TransportContract $port43 = null,
         ?MmdbContract $mmdb = null,
         ?TargetRepositoryContract $targetRepo = null,
+        ?\Closure $traceFakeRun = null,
     ): self {
         return new self(
             cache: $cache,
@@ -78,7 +81,7 @@ final readonly class NettoolsServices
             quota: new QuotaLedger($cache),
             semaphore: new ProbeSemaphore($locker),
             probeCache: new ProbeCache($cache, $locker),
-            capabilities: new CapabilityDetector($cache),
+            capabilities: new CapabilityDetector($cache, $traceFakeRun !== null ? static fn (): bool => true : null),
             targets: new TargetPipeline(),
             settings: $settings ?? new NettoolsSettings(),
             fetcher: $fetcher ?? throw new \InvalidArgumentException('forTests() requires an explicit fetcher'),
@@ -88,6 +91,7 @@ final readonly class NettoolsServices
             breaker: new SourceBreaker($cache),
             logger: $logger,
             targetRepo: $targetRepo ?? new Support\InMemoryTargetRepository(),
+            traceFakeRun: $traceFakeRun,
         );
     }
 
@@ -153,14 +157,23 @@ final readonly class NettoolsServices
         return new Probes\PingProbe(capabilities: $this->capabilities, packets: $this->settings->pingPackets);
     }
 
-    public function traceProbe(): Probes\TraceProbe
+    public function traceProbe(?\Closure $onHop = null): Probes\TraceProbe
     {
-        return new Probes\TraceProbe(capabilities: $this->capabilities, mmdb: $this->mmdb, maxHops: $this->settings->traceHops);
+        return new Probes\TraceProbe(
+            capabilities: $this->capabilities,
+            mmdb: $this->mmdb,
+            runProcess: $this->traceFakeRun,
+            maxHops: $this->settings->traceHops,
+            onHop: $onHop,
+        );
     }
 
     public function httpProbe(): Probes\HttpProbe
     {
-        return new Probes\HttpProbe(fetcher: $this->fetcher);
+        return new Probes\HttpProbe(
+            fetcher: $this->fetcher,
+            hopGuard: new Support\HttpHopGuard(),
+        );
     }
 
     public function asnProbe(): Probes\AsnProbe

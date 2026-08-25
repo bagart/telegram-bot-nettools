@@ -16,6 +16,9 @@ final class CapabilityDetector implements ASKWarmableContract
 {
     private const string CACHE_PREFIX = 'tg-nettools:cap:';
 
+    /** Short TTL: binaries change with deploys, and the key is only valid for this host (todo P2-3). */
+    private const int CACHE_TTL_SECONDS = 300;
+
     /** @var list<string> */
     public const array DETECTED_BINARIES = ['ping', 'traceroute', 'tracepath'];
 
@@ -38,16 +41,30 @@ final class CapabilityDetector implements ASKWarmableContract
 
     public function hasBinary(string $binary): bool
     {
-        $key = self::CACHE_PREFIX.$binary;
-        $cached = $this->cache->get($key);
+        $cached = $this->cache->get($this->cacheKeyFor($binary));
         if (is_bool($cached)) {
             return $cached;
         }
 
         $exists = ($this->binaryExists ?? self::defaultBinaryExists())($binary);
-        $this->cache->put($key, $exists, 86400 * 365);
+        $this->cache->put($this->cacheKeyFor($binary), $exists, self::CACHE_TTL_SECONDS);
 
         return $exists;
+    }
+
+    /**
+     * Shared cache keys are scoped to the current host fingerprint
+     * (hostname + machine class): worker B on a different box must never
+     * trust worker A's detection result.
+     */
+    public static function cacheKeyFor(string $binary): string
+    {
+        return self::CACHE_PREFIX.self::hostFingerprint().':'.$binary;
+    }
+
+    private static function hostFingerprint(): string
+    {
+        return substr(sha1((gethostname() ?: 'unknown').'|'.php_uname('m')), 0, 8);
     }
 
     /** traceroute binary if any flavor exists, else null → /trace degrades. */

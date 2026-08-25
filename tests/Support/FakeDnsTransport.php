@@ -38,7 +38,7 @@ final class FakeDnsTransport implements DnsTransportContract
     {
         $this->udpQueries[] = $wireQuery;
 
-        return $this->scripted[$this->cursor++]['udp'] ?? null;
+        return self::echoId($this->scripted[$this->cursor++]['udp'] ?? null, $wireQuery);
     }
 
     public function askTcp(string $serverIp, string $wireQuery, int $timeoutSeconds): ?string
@@ -46,7 +46,17 @@ final class FakeDnsTransport implements DnsTransportContract
         $this->tcpQueries[] = $wireQuery;
 
         // the TCP retry belongs to the query that just consumed its entry
-        return $this->scripted[max(0, $this->cursor - 1)]['tcp'] ?? null;
+        return self::echoId($this->scripted[max(0, $this->cursor - 1)]['tcp'] ?? null, $wireQuery);
+    }
+
+    /** Real resolvers echo the query ID — patch it into the scripted body. */
+    private static function echoId(?string $response, string $wireQuery): ?string
+    {
+        if ($response === null || strlen($response) < 2 || strlen($wireQuery) < 2) {
+            return $response;
+        }
+
+        return substr($wireQuery, 0, 2).substr($response, 2);
     }
 
     /**

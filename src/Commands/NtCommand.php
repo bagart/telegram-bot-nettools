@@ -82,7 +82,7 @@ final class NtCommand implements TgModuleProcessorContract
                 chatId: (string) $chatId,
                 text: $this->services->quota->isAdminChat($chatId)
                     ? $this->doctorCardText()
-                    : '🔒 /nt doctor is available in admin chats only.',
+                    : \BAGArt\TelegramBotNettools\Formatting\Messages::format('doctor_locked'),
                 parseMode: ParseModeEnum::HTML,
             ));
 
@@ -115,22 +115,22 @@ final class NtCommand implements TgModuleProcessorContract
     /** /nt doctor — source health table (§3.2): capabilities + breaker states. */
     private function doctorCardText(): string
     {
-        $lines = ['<b>NETTOOLS DOCTOR</b>', '', '<b>Capabilities</b>'];
-        foreach ($this->services->capabilities->summaryLines() as $line) {
-            $lines[] = '· '.htmlspecialchars($line, ENT_QUOTES);
-        }
-
-        $lines[] = '';
-        $lines[] = '<b>Sources</b>';
+        $sources = [];
         foreach (\BAGArt\TelegramBotNettools\Support\SourceBreaker::KNOWN_SOURCES as $source) {
             $state = $this->services->breaker?->stateOf($source) ?? 'closed';
-            $icon = $state === 'open' ? '❌ open' : ($state === 'half-open' ? '🟡 half-open' : '✅ closed');
+            $icon = match ($state) {
+                'open' => '❌ open',
+                'half-open' => '🟡 half-open',
+                default => '✅ closed',
+            };
             $retry = $state !== 'closed' ? ' · retry in '.$this->services->breaker?->retryIn($source).'s' : '';
-            $lines[] = '· '.str_pad(htmlspecialchars($source, ENT_QUOTES), 14).$icon.$retry;
+            $sources[] = str_pad(htmlspecialchars($source, ENT_QUOTES), 14).$icon.$retry;
         }
 
-        return implode("
-", $lines);
+        return \BAGArt\TelegramBotNettools\Ui\NtCards::doctor(
+            $this->services->capabilities->summaryLines(),
+            $sources,
+        );
     }
 
     public function onException(ProcessorErrorContext $context): void

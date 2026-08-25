@@ -56,6 +56,16 @@ final class RecoEngine
         'hostname_mismatch' => 'issue a certificate covering the exact hostnames served',
         'incomplete_chain' => 'serve the full intermediate chain',
         'long_lifetime' => 'shorten certificate lifetime; automate via ACME',
+        // §8 additions wired from probe findings
+        'security_txt_missing' => 'publish /.well-known/security.txt with an RFC 9116 contact',
+        'cors_wildcard_credentials' => 'restrict origins; never combine ACAO:* with credentials=true',
+        'cors_origin_reflection' => 'allowlist exact origins instead of reflecting arbitrary ones',
+        'trace_enabled' => 'disable legacy TRACE/TRACK methods at the web server',
+        'hsts_not_preload_eligible' => 'raise max-age to ≥31536000 and add includeSubDomains',
+        'no_compression' => 'enable brotli/gzip for text assets',
+        'long_redirect_chain' => 'redirect directly instead of chaining >2 hops',
+        'no_h2' => 'enable ALPN h2 on the TLS listener',
+        'mta_sts_weak_mode' => 'move MTA-STS policy to enforce and publish reports',
     ];
 
     /**

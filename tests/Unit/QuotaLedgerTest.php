@@ -59,6 +59,23 @@ final class QuotaLedgerTest extends TestCase
         }
     }
 
+    /** todo P2-4 gate: chat-ceiling denial must leave the user balance intact. */
+    public function test_chat_ceiling_denial_refunds_the_user_bump(): void
+    {
+        $ledger = new QuotaLedger(FakeOutboundCacheFactory::create(), dailyUnits: 50, chatCeiling: 4);
+
+        $ledger->charge(100, 1, 4); // fills the chat ceiling
+
+        try {
+            $ledger->charge(100, 2, 2); // user bump succeeds, chat denies
+            self::fail('expected QuotaExceededException');
+        } catch (QuotaExceededException) {
+        }
+
+        self::assertSame(0, $ledger->usedByUser(100, 2), 'denied run must not consume user units');
+        self::assertSame(4, $ledger->usedInChat(100), 'chat counter stays clamped at the ceiling');
+    }
+
     public function test_per_chat_override_raises_limit(): void
     {
         $ledger = new QuotaLedger(

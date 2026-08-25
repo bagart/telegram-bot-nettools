@@ -178,31 +178,50 @@ final class SubsCard
     }
 
     /**
-     * ❌ group for DNS-only takeover hints — wording always "suspected".
+     * ☠️ group for fetch-confirmed takeovers, ❌ for DNS-only hints
+     * ("suspected" wording preserved for unverified entries).
      *
      * @return list<Section>
      */
     private static function suspectSections(array $payload): array
     {
-        $entries = [];
+        $confirmedSet = array_fill_keys(
+            array_map(strval(...), (array) ($payload['takeover_confirmed'] ?? [])),
+            true,
+        );
+
+        $verified = [];
+        $suspected = [];
         foreach ((array) ($payload['suspect_takeover'] ?? []) as $entry) {
             $entry = (array) $entry;
             $name = is_string($entry['name'] ?? null) ? $entry['name'] : '';
             $provider = is_string($entry['provider'] ?? null) ? $entry['provider'] : '';
 
-            if ($name !== '' && $provider !== '') {
-                $entries[] = HtmlRenderer::esc($name).' → '.HtmlRenderer::esc($provider);
+            if ($name === '' || $provider === '') {
+                continue;
+            }
+            if (isset($confirmedSet[$name])) {
+                $verified[] = HtmlRenderer::esc($name).' → '.HtmlRenderer::esc($provider);
+            } else {
+                $suspected[] = HtmlRenderer::esc($name).' → '.HtmlRenderer::esc($provider);
             }
         }
 
-        if ($entries === []) {
-            return [];
+        $sections = [];
+        if ($verified !== []) {
+            $sections[] = new Section('', [
+                '☠️ <b>CONFIRMED</b> subdomain takeover — provider serves its not-found page:',
+                ...$verified,
+            ]);
+        }
+        if ($suspected !== []) {
+            $sections[] = new Section('', [
+                '❌ suspected dangling CNAME — verify before registering:',
+                ...$suspected,
+            ]);
         }
 
-        return [new Section('', [
-            '❌ suspected dangling CNAME — verify before registering:',
-            ...$entries,
-        ])];
+        return $sections;
     }
 
     /**

@@ -16,7 +16,7 @@ declare(strict_types=1);
 return [
     'invalid_target' => '❌ Not a valid domain or IP: {input}',
     'target_blocked' => '🚫 Blocked: {reason} — private/reserved range',
-    'nxdomain' => '🔍 NXDOMAIN — {host} does not exist. Check spelling?',
+    'nxdomain' => "🔍 {host} does not resolve (NXDOMAIN) — it looks unregistered. Double-check the spelling, or grab it from a registrar.",
     'probe_timeout' => '⏳ {probe} timed out after {seconds}s at {step}',
     'upstream_unavailable' => '⚠️ Source {source} unavailable — showing partial results',
     'quota_exceeded' => '🪙 Daily quota used ({used}/{max}). Resets in {reset_in}. /quota',
@@ -36,4 +36,8 @@ return [
     'port_rate_limited' => '🚦 Port-check limit reached ({limit}/hour). Try again later.',
     'invalid_port' => '❌ Invalid port: {input} — expected 1–65535.',
     'awaiting_target' => 'Send the target now (domain or IP).',
+    'admin_gate_denied' => "🔒 /{command} is restricted to admin chats with the feature enabled.\n\n{usage}",
+    'group_etiquette_tip' => '<i>Tip: in groups reply to a message or @mention the bot to run nettools commands.</i>',
+    'ask_target' => '🎯 <b>/{command}</b> — send the target now (domain or IP).',
+    'doctor_locked' => '🔒 /nt doctor is available in admin chats only.',
 ];

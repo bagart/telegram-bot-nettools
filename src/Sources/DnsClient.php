@@ -8,10 +8,12 @@ use BAGArt\TelegramBotNettools\Contracts\Exceptions\InvalidTargetException;
 
 /**
  * Internal minimal DNS client (RFC D5): UDP with TCP retry on truncation.
- * Supports exactly the record set the module needs (§10.2) — owning the
- * client keeps zero new deps and precise per-query timeouts. Name
- * decompression handles pointers with a loop guard; malformed answers
- * degrade to null, never throw beyond InvalidTarget on bad input hosts.
+ * Query IDs are matched against answers (UDP spoofing defense) with a bounded
+ * fresh-ID retry; queries carry an EDNS0 OPT record (1232 B buffer,
+ * DNS-flag-day size). Supports exactly the record set the module needs
+ * (§10.2) — owning the client keeps zero new deps and precise per-query
+ * timeouts. Name decompression handles pointers with a loop guard; malformed
+ * answers degrade to null, never throw beyond InvalidTarget on bad input hosts.
  */
 final class DnsClient
 {
@@ -35,6 +37,14 @@ final class DnsClient
 
     private const int MAX_NAME_BYTES = 255;
 
+    /** EDNS0 requestor's UDP payload size (1232 = DNS flag day common denominator). */
+    public const int EDNS_BUFFER_SIZE = 1232;
+
+    /** Fresh-ID attempts for dropped/mismatched answers before giving up. */
+    private const int MAX_ATTEMPTS = 2;
+
+    private const int TYPE_OPT = 41;
+
     public function __construct(private readonly DnsTransportContract $transport)
     {
     }
@@ -49,29 +59,43 @@ final class DnsClient
             return null;
         }
 
-        try {
-            $query = self::encodeQuery($host, $qtype);
-        } catch (InvalidTargetException) {
-            return null;
+        for ($attempt = 0; $attempt < self::MAX_ATTEMPTS; $attempt++) {
+            try {
+                $id = random_int(0, 0xFFFF);
+                $query = self::encodeQuery($host, $qtype, $id);
+            } catch (InvalidTargetException) {
+                return null;
+            }
+
+            $response = $this->transport->askUdp($resolverIp, $query, $timeoutSeconds);
+            if ($response === null) {
+                return null;
+            }
+
+            // ID mismatch (spoof/off-path garbage) or malformed → drop and
+            // retry once with a fresh ID; never accept an unverified answer.
+            $answer = self::decodeResponse($response, $id);
+            if ($answer === null) {
+                continue;
+            }
+
+            if ($answer->truncated) {
+                // Truncated UDP answer — RFC 1035 §4.2.1 requires TCP retry;
+                // identical wire query (same ID), answer must match it too.
+                $tcpResponse = $this->transport->askTcp($resolverIp, $query, $timeoutSeconds);
+
+                return $tcpResponse === null ? $answer : self::decodeResponse($tcpResponse, $id);
+            }
+
+            return $answer;
         }
 
-        $response = $this->transport->askUdp($resolverIp, $query, $timeoutSeconds);
-        if ($response === null) {
-            return null;
-        }
-
-        $answer = self::decodeResponse($response);
-        if ($answer !== null && $answer->truncated) {
-            // Truncated UDP answer — RFC 1035 §4.2.1 requires TCP retry
-            $tcpResponse = $this->transport->askTcp($resolverIp, $query, $timeoutSeconds);
-            $answer = $tcpResponse === null ? $answer : self::decodeResponse($tcpResponse);
-        }
-
-        return $answer;
+        return null;
     }
 
     /**
-     * Wire query bytes: header (RD=1) + one question entry.
+     * Wire query bytes: header (RD=1, AR=1) + one question entry + an EDNS0
+     * OPT pseudo-record advertising {@see self::EDNS_BUFFER_SIZE}.
      *
      * @throws InvalidTargetException empty/oversized labels or host
      */
@@ -90,22 +114,32 @@ final class DnsClient
             throw new InvalidTargetException($host);
         }
 
-        $header = pack('nnnnnn', $id ?? random_int(0, 0xFFFF), 0x0100, 1, 0, 0, 0);
+        $header = pack('nnnnnn', $id ?? random_int(0, 0xFFFF), 0x0100, 1, 0, 0, 1);
 
-        return $header.$wire.pack('nn', $qtype, 1);
+        // Explicit QNAME terminator — without it the QTYPE's high byte used
+        // to double as the root label and resolvers parsed QTYPE as 0x0100.
+        return $header.$wire."\x00".pack('nn', $qtype, 1)
+            ."\x00".pack('nnNn', self::TYPE_OPT, self::EDNS_BUFFER_SIZE, 0, 0);
     }
 
     /**
-     * @return DnsAnswer|null null = malformed/truncated-beyond-repair message
+     * @param  ?int  $expectedId  when non-null, answers carrying a different
+     *                             ID are rejected (null = legacy, accept any)
+     * @return DnsAnswer|null null = malformed message / ID mismatch /
+     *                                             truncated-beyond-repair
      */
-    public static function decodeResponse(string $bytes): ?DnsAnswer
+    public static function decodeResponse(string $bytes, ?int $expectedId = null): ?DnsAnswer
     {
         if (strlen($bytes) < self::HEADER_BYTES) {
             return null;
         }
 
-        /** @var array{1: int, 2: int, 3: int, 4: int, 5: int} $header */
+        /** @var array{id: int, flags: int, qdcount: int, ancount: int, nscount: int, arcount: int} $header */
         $header = unpack('nid/nflags/nqdcount/nancount/nnscount/narcount', substr($bytes, 0, self::HEADER_BYTES));
+
+        if ($expectedId !== null && $header['id'] !== $expectedId) {
+            return null;
+        }
 
         $flags = $header['flags'];
         if (($flags >> 15) !== 1) { // QR bit — must be a response

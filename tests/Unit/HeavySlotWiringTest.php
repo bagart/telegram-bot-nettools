@@ -41,7 +41,7 @@ final class HeavySlotWiringTest extends TestCase
         self::assertStringContainsString('heavy probe is running', $harness->lastText());
         self::assertSame(0, $harness->services->quota->usedByUser(100, 42), 'busy rejection must not consume quota');
         self::assertSame(1, $harness->services->metrics()->counter('semaphore_busy', 'events'));
-        self::assertTrue($harness->services->locker->isLocked(self::HEAVY_KEY), 'foreign lock must survive');
+        self::assertTrue(self::fakeLocker($harness)->isLocked(self::HEAVY_KEY), 'foreign lock must survive');
     }
 
     public function test_busy_semaphore_blocks_report_without_charging_quota(): void
@@ -85,7 +85,7 @@ final class HeavySlotWiringTest extends TestCase
 
         self::assertStringContainsString('WORLD PING', $harness->lastText());
         self::assertSame(1, $harness->services->metrics()->counter('heavy_acquired', 'events'));
-        self::assertFalse($harness->services->locker->isLocked(self::HEAVY_KEY), 'slot must be released after the run');
+        self::assertFalse(self::fakeLocker($harness)->isLocked(self::HEAVY_KEY), 'slot must be released after the run');
     }
 
     public function test_busy_world_ping_answers_without_consuming_the_rate_slot(): void
@@ -139,4 +139,11 @@ final class HeavySlotWiringTest extends TestCase
     {
         return new NtCallbackRouter($harness->sender, $harness->services, $harness->context);
     }
+    private static function fakeLocker(\BAGArt\TelegramBotNettools\Tests\Support\FakeBotHarness $harness): \BAGArt\TelegramBotNettools\Tests\Support\FakeLocker
+    {
+        \assert($harness->services->locker instanceof \BAGArt\TelegramBotNettools\Tests\Support\FakeLocker);
+
+        return $harness->services->locker;
+    }
+
 }

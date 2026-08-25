@@ -90,7 +90,7 @@ final class WhoisProbe implements NettoolsProbeContract
      * empty answer → failure recorded, visible warning appended.
      *
      * @param  list<string>  $degraded
-     * @param  Closure(): array{0: array<string, mixed>|null, 1: ?string}  $fetch
+     * @param  \Closure  $fetch returns {payload|null, error|null}
      */
     private function viaBreaker(string $source, array &$degraded, \Closure $fetch): ?array
     {

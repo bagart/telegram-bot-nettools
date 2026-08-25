@@ -12,6 +12,10 @@ namespace BAGArt\TelegramBotNettools\Contracts;
  *
  * @return arrays are scalar-only trees (cache-purity rule)
  */
+/**
+ * @phpstan-type CityShape array{country: ?string, region: ?string, city: ?string, lat: float, lon: float}
+ * @phpstan-type AsnShape array{asn: int, org: string}
+ */
 interface MmdbContract
 {
     /**

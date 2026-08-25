@@ -7,6 +7,7 @@ namespace BAGArt\TelegramBotNettools\Sources;
 use BAGArt\ASKClient\Contracts\Client\ApiClientContract;
 use BAGArt\ASKClient\Dto\ASKHttpRequest;
 use BAGArt\TelegramBotNettools\Contracts\SourceHttpContract;
+use BAGArt\TelegramBotNettools\Support\HttpHopGuard;
 
 /**
  * Platform-backed {@see SourceHttpContract}: the bot setup's generic,
@@ -15,15 +16,18 @@ use BAGArt\TelegramBotNettools\Contracts\SourceHttpContract;
  *
  * Follows up to two 3xx hops manually so behavior is identical across
  * guzzle/curl-multi/ask-socket transports (only curl honors FOLLOWLOCATION
- * natively). Failures surface as null; a final failure after retries by the
- * caller may raise UpstreamUnavailableException for degraded-source notes.
+ * natively). Each hop re-passes the SSRF verdict for the new host and denies
+ * https→http downgrades; a blocked or failed hop surfaces as null — a
+ * degraded upstream signal, never an exception path.
  */
 final class PlatformHttp implements SourceHttpContract
 {
     private const int MAX_REDIRECT_HOPS = 2;
 
-    public function __construct(private readonly ApiClientContract $client)
-    {
+    public function __construct(
+        private readonly ApiClientContract $client,
+        private readonly HttpHopGuard $hopGuard = new HttpHopGuard(),
+    ) {
     }
 
     public function getJson(string $url, int $timeoutSeconds): ?array
@@ -46,9 +50,15 @@ final class PlatformHttp implements SourceHttpContract
             $status = $response->getStatusCode();
 
             if ($status >= 300 && $status < 400 && $hops < self::MAX_REDIRECT_HOPS) {
-                $location = $this->redirectTarget($url, $response->getHeaderLine('Location'));
-                if ($location !== null) {
-                    $url = $location;
+                $location = $response->getHeaderLine('Location');
+                $target = $location === '' ? null : $this->redirectTarget($url, $location);
+
+                if ($target !== null) {
+                    if (($this->hopGuard->approve($target, parse_url($url, PHP_URL_SCHEME)))['reason'] !== null) {
+                        return null;
+                    }
+
+                    $url = $target;
                     $hops++;
 
                     continue;

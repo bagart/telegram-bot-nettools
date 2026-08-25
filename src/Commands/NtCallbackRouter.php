@@ -110,7 +110,7 @@ final class NtCallbackRouter implements TgModuleProcessorContract
                     ]);
                     $this->answer($botConfig, $dto, '/'.$command.' — send the target now.');
                     $this->sendCard($botConfig, $chatId, [
-                        'text' => '🎯 <b>/'.$command.'</b> — send the target now (domain or IP).',
+                        'text' => \BAGArt\TelegramBotNettools\Formatting\Messages::format('ask_target', ['command' => $command]),
                         'keyboard' => [[new Button('✖ Cancel', CallbackGrammar::encode('cancel', $route['chatId']))]],
                     ]);
                     return;
@@ -124,6 +124,13 @@ final class NtCallbackRouter implements TgModuleProcessorContract
 
             case 'quota':
                 $card = QuotaCard::render($this->services->quota, $route['chatId'], (int) ($dto->from->id ?? 0));
+                break;
+
+            case 'retry':
+                if ($this->retryLast($route, $dto, $botConfig)) {
+                    return;
+                }
+                $card = $this->menuCard($route['chatId']);
                 break;
 
             case 'cancel':
@@ -182,6 +189,26 @@ final class NtCallbackRouter implements TgModuleProcessorContract
      * smtp check). Return true = fully handled (message already sent),
      * false/null = fall back to menu.
      */
+    /** [Retry] on a failure card: re-dispatch the last command of this chat. */
+    private function retryLast(array $route, CallbackQueryTypeDTO $dto, TgBotConfig $botConfig): bool
+    {
+        $last = $this->services->lastAction()->recall((string) $route['chatId']);
+        $class = $last === null ? null : CommandMap::byName((string) ($last['command'] ?? ''));
+
+        if ($class === null) {
+            $this->answer($botConfig, $dto, 'Nothing to repeat.');
+
+            return false;
+        }
+
+        $command = new $class($this->sender, $this->services, $this->context);
+        assert($command instanceof ProbeCommand);
+        $this->answer($botConfig, $dto, 'Retrying…');
+        $command->execute($botConfig, (string) $route['chatId'], $dto->from?->id, (string) ($last['args'] ?? ''));
+
+        return true;
+    }
+
     /** 'h'+10hex of 'ask|{command}' → command name (pure, no cache). */
     private static function decodeAskRef(string $ref): ?string
     {
@@ -346,10 +373,14 @@ final class NtCallbackRouter implements TgModuleProcessorContract
                 return true;
             }
 
+            $this->answer($botConfig, $dto, 'World ping running…');
+            $this->sendCard($botConfig, $chatId, [
+                'text' => '⏳ World ping '.$entry['host'].' — polling vantage nodes…',
+                'keyboard' => [],
+            ]);
+
             $world = new \BAGArt\TelegramBotNettools\Support\WorldPing($this->services->fetcher);
             $outcome = $world->ping($entry['host']);
-
-            $this->answer($botConfig, $dto);
             $this->sendCard($botConfig, $chatId, [
                 'text' => \BAGArt\TelegramBotNettools\Ui\WorldPingCard::render($outcome, $entry['host']),
                 'keyboard' => [[new \BAGArt\TelegramBotNettools\Ui\Button('« Menu', \BAGArt\TelegramBotNettools\Ui\CallbackGrammar::encode('menu', $route['chatId']))]],
