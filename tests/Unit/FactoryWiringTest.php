@@ -17,7 +17,7 @@ use BAGArt\TelegramBotNettools\Tests\Support\FakePort43Transport;
 use PHPUnit\Framework\TestCase;
 
 /**
- * Factory-path wiring (todo.nettools P5-1 / P0-1 gate): every probe factory
+ * Factory-path wiring (MVP P5-1 / P0-1 gate): every probe factory
  * on NettoolsServices must construct and smoke-run over fakes — catches
  * wiring drift that probe-level tests with hand-injected transports miss
  * (the P0-1 whois TypeError class).

@@ -69,6 +69,23 @@ MCP tool: `NettoolsProbeTool` for AI agents (same guard/quota path).
   All egress goes through SSRF-guarded pins (`CURLOPT_RESOLVE`) with the
   single-resolution invariant; breaker keys and quota ledger are plain cache
   counters (safe to lose on flush).
+- **Rollout / go-live checklist (§16)** — the module ships code-complete;
+  enabling it for users is an ops action on the target host:
+  1. `composer dump-autoload` (or `cmd/deps/install` in prod mode) and run
+     migrations (`tg_nettools_targets`).
+  2. Install binaries: `apt-get install -y traceroute iputils-ping`
+     (degraded fallbacks are automatic but weaker).
+  3. Configure `config/tg-nettools.php` (resolvers, quotas, heavy flags,
+     admin-gated `portscanEnabled`/`dnsblEnabled` stay OFF until reviewed).
+  4. Register the provider in `bootstrap/providers.php`, enable the module
+     for the bot, set the webhook.
+  5. Run the smoke gate on that host:
+     `php misc/BAGArt/telegram-bot-nettools/tools/probe-smoke.php --heavy`
+     — exit 0 required; the printed table is the §15 latency evidence.
+  6. In-chat smoke: `/nt` → doctor shows all sources closed; run one command
+     per family (/ip /ssl /mail /subs); check `/quota`.
+  Rollback = disable module enablement flag (no schema rollback needed).
+
 - **Benchmark**: `php misc/BAGArt/telegram-bot-nettools/tools/bench.php`
   prints per-probe latency over fixture targets (no egress).
 

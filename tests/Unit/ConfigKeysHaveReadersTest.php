@@ -7,7 +7,7 @@ namespace BAGArt\TelegramBotNettools\Tests\Unit;
 use PHPUnit\Framework\TestCase;
 
 /**
- * Config-shape lock (todo.nettools P0-3 gate): every leaf in
+ * Config-shape lock (MVP P0-3 gate): every leaf in
  * config/tg-nettools.php must have a declared reader — dead keys are
  * forbidden. Nested subtrees consumed wholesale via config('tg-nettools')
  * are attributed to NettoolsSettings::fromArray().

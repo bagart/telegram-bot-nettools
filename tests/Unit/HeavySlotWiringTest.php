@@ -22,7 +22,7 @@ use BAGArt\TelegramBotNettools\Ui\CallbackGrammar;
 use PHPUnit\Framework\TestCase;
 
 /**
- * Heavy-slot wiring (todo.nettools P0-4 gate): heavy commands hold the
+ * Heavy-slot wiring (MVP P0-4 gate): heavy commands hold the
  * global semaphore; a busy rejection renders the friendly card, charges no
  * quota, consumes no rate slot — and the slot is released after a run.
  */
