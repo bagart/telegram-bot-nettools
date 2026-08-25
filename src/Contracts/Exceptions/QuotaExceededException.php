@@ -11,7 +11,16 @@ final class QuotaExceededException extends NettoolsException
         parent::__construct('quota_exceeded', [
             'used' => $used,
             'max' => $max,
-            'reset_in_minutes' => $resetInMinutes,
+            'reset_in' => self::humanizeMinutes($resetInMinutes),
         ], "quota exceeded: {$used}/{$max}, resets in {$resetInMinutes}m");
+    }
+
+    private static function humanizeMinutes(int $minutes): string
+    {
+        if ($minutes < 60) {
+            return "{$minutes}m";
+        }
+
+        return sprintf('%dh %02dm', intdiv($minutes, 60), $minutes % 60);
     }
 }

@@ -22,9 +22,11 @@
         }
     ],
     "require": {
-        "php": "^8.5",
-        "bagart/telegram-bot-lib": "*",
-        "laravel/framework": "^13.0"
+        "php": "^8.5"
+    },
+    "suggest": {
+        "bagart/telegram-bot-lib": "Telegram bot platform core (provided by the host app)",
+        "laravel/framework": "^13.0 (provided by the host app)"
     },
     "autoload": {
         "psr-4": {
