@@ -105,7 +105,7 @@ Config is published from `config/tg-nettools.php` (merge; secrets via env:
 ## Tests
 
 ```bash
-cd misc/BAGArt/telegram-bot-nettools && composer test
+cd misc/BAGArt/telegram-bot-nettools-module && composer test
 ```
 
 ## Acceptable use

@@ -7,7 +7,7 @@ declare(strict_types=1);
 | Nettools Module
 |--------------------------------------------------------------------------
 |
-| Auditor / admin toolkit (bagart/telegram-bot-nettools). The module ships
+| Auditor / admin toolkit (bagart/telegram-bot-nettools-module). The module ships
 | DISABLED per bot (fail-closed); enable it with tg:module:enable nettools.
 | These are platform defaults and operational limits.
 |

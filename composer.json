@@ -1,6 +1,6 @@
 {
     "$schema": "https://getcomposer.org/schema.json",
-    "name": "bagart/telegram-bot-nettools",
+    "name": "bagart/telegram-bot-nettools-module",
     "description": "Nettools module for the Telegram bot platform: auditor/admin toolkit (whois/RDAP, DNS, geo/ASN, ping/trace, TLS/mail/security audits, aggregated reports, recommendations)",
     "type": "library",
     "license": "MIT",
@@ -46,10 +46,10 @@
     "repositories": {
         "baseline": {
             "type": "path",
-            "url": "../devops-baseline"
+            "url": "../telegram-devops-baseline"
         }
     },
     "require-dev": {
-        "bagart/devops-baseline": "@dev"
+        "bagart/telegram-devops-baseline": "@dev"
     }
 }

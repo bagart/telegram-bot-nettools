@@ -10,7 +10,7 @@ declare(strict_types=1);
  * This is the executable part of the rollout checklist — run it on the
  * target host BEFORE enabling the module for users:
  *
- *   php misc/BAGArt/telegram-bot-nettools/tools/probe-smoke.php [--heavy] [--only=ip,dns]
+ *   php misc/BAGArt/telegram-bot-nettools-module/tools/probe-smoke.php [--heavy] [--only=ip,dns]
  *
  * Constrained networks make every query wait its full timeout — expect a
  * complete run to take up to ~2 minutes when egress is degraded.
