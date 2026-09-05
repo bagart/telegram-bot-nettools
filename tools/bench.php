@@ -8,7 +8,7 @@ declare(strict_types=1);
  * Runs every pure/format-heavy path over synthetic fixtures — zero egress,
  * zero binaries — and prints a latency table. Usage:
  *
- *   php misc/BAGArt/telegram-bot-nettools-module/tools/bench.php
+ *   php misc/BAGArt/tgbot-module-nettools/tools/bench.php
  */
 
 use BAGArt\TelegramBotNettools\Formatting\HtmlRenderer;

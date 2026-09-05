@@ -8,11 +8,11 @@
     "packages": [],
     "packages-dev": [
         {
-            "name": "bagart/telegram-devops-baseline",
+            "name": "bagart/telegram-platform-devops-baseline",
             "version": "dev-main",
             "dist": {
                 "type": "path",
-                "url": "../telegram-devops-baseline",
+                "url": "../telegram-platform-devops-baseline",
                 "reference": "b9b6f054d845dab446185693d1412dd26fd48714"
             },
             "require": {
@@ -48,7 +48,7 @@
     "aliases": [],
     "minimum-stability": "stable",
     "stability-flags": {
-        "bagart/telegram-devops-baseline": 20
+        "bagart/telegram-platform-devops-baseline": 20
     },
     "prefer-stable": false,
     "prefer-lowest": false,
