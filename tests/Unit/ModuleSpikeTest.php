@@ -5,7 +5,12 @@ declare(strict_types=1);
 namespace BAGArt\TelegramBotNettools\Tests\Unit;
 
 use BAGArt\TelegramBot\Modules\AttributedComponentsScanner;
+use BAGArt\TelegramBot\Modules\ModuleScopedRegistrar;
 use BAGArt\TelegramBot\Modules\TgCommandRegistry;
+use BAGArt\TelegramBot\Modules\TgWebApiRegistry;
+use BAGArt\TelegramBot\Modules\TgWebPermissionRegistry;
+use BAGArt\TelegramBot\Modules\TgWebResourceRegistry;
+use BAGArt\TelegramBot\Modules\TgWebUiRegistry;
 use BAGArt\TelegramBot\Modules\TypedModuleRegistrar;
 use BAGArt\TelegramBot\Processing\TypeDTOProcessorRegistry;
 use BAGArt\TelegramBotNettools\Commands\DnsCommand;
@@ -37,10 +42,17 @@ final class ModuleSpikeTest extends TestCase
         $commandRegistry = new TgCommandRegistry();
         $processorRegistry = new TypeDTOProcessorRegistry();
 
-        $registrar = new TypedModuleRegistrar(
-            processorRegistry: $processorRegistry,
-            commandRegistry: $commandRegistry,
-            attributedScanner: new AttributedComponentsScanner(cache: null),
+        $registrar = new ModuleScopedRegistrar(
+            inner: new TypedModuleRegistrar(
+                processorRegistry: $processorRegistry,
+                commandRegistry: $commandRegistry,
+                attributedScanner: new AttributedComponentsScanner(cache: null),
+            ),
+            moduleId: 'nettools',
+            webUiRegistry: new TgWebUiRegistry(),
+            webApiRegistry: new TgWebApiRegistry(),
+            webResourceRegistry: new TgWebResourceRegistry(),
+            webPermissionRegistry: new TgWebPermissionRegistry(),
         );
 
         NettoolsModule::register($registrar);

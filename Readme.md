@@ -111,3 +111,11 @@ cd misc/BAGArt/telegram-bot-nettools-module && composer test
 ## Acceptable use
 
 Passive public data only. Scan your own hosts. Local laws apply.
+
+## Menu integration
+
+Menu-hub surface per telegram-platform-menu/docs/tasks/menu_integration.md (M-4):
+NettoolsWebUi (schema over the per-chat ChatSettings overlay keys), NettoolsChatSettingsHandler
+(GET chat-settings / PUT chat-settings/apply), NettoolsUiHandler (GET targets) and
+NettoolsTargetsResource (user-scoped resource picker). Engine toggles stay in config
+until the enablement-settings seam lands.

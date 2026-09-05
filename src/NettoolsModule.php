@@ -8,6 +8,10 @@ use BAGArt\TelegramBot\Modules\TgModuleCapability;
 use BAGArt\TelegramBot\Modules\TgModuleContract;
 use BAGArt\TelegramBot\Modules\TgModuleDescriptor;
 use BAGArt\TelegramBot\Modules\TgModuleRegistrar;
+use BAGArt\TelegramBotNettools\Web\NettoolsChatSettingsHandler;
+use BAGArt\TelegramBotNettools\Web\NettoolsTargetsResource;
+use BAGArt\TelegramBotNettools\Web\NettoolsUiHandler;
+use BAGArt\TelegramBotNettools\Web\NettoolsWebUi;
 
 /**
  * Nettools platform module: auditor/admin toolkit (whois/RDAP, DNS, geo/ASN,
@@ -35,6 +39,7 @@ final class NettoolsModule implements TgModuleContract
             capabilities: [
                 TgModuleCapability::Processor,
                 TgModuleCapability::Command,
+                TgModuleCapability::Ui,
             ],
             defaultEnabled: false,
             failClosed: true,
@@ -44,5 +49,13 @@ final class NettoolsModule implements TgModuleContract
     public static function register(TgModuleRegistrar $registrar): void
     {
         $registrar->registerAttributed(self::class);
+        // Hub web surface (menu_integration.md M-4): target-memory picker data,
+        // read-only dashboard endpoints and the per-chat overlay schema. The
+        // §8.3 form covers ChatSettings overlay keys only — engine toggles
+        // stay in config('tg-nettools') until the enablement-settings seam.
+        $registrar->webUi(NettoolsWebUi::class);
+        $registrar->webApi(NettoolsUiHandler::class);
+        $registrar->webApi(NettoolsChatSettingsHandler::class);
+        $registrar->webResource(NettoolsTargetsResource::class);
     }
 }
